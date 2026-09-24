@@ -131,5 +131,6 @@ These are engineering planning estimates, not runtime certification.
 - No live broker, live account, automatic order submission, credentials, application-setting mutation, or Android/Windows UI was introduced.
 
 ### v26.49 validation
+- Correction commit: 4a0257fc53f95ba3035b0d60d0a485659cac9a4e.
 - Native GitHub Actions validation is required before v26.49 can be called stable.
 - Local native compilation is not claimed.
