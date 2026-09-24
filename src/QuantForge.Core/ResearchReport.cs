@@ -16,7 +16,8 @@ public readonly record struct ResearchReport(
     string ParameterFingerprint,
     string TemporalPartition,
     string? BlockReason,
-    AccountSnapshot? Account);
+    AccountSnapshot? Account,
+    EvidenceRecord? EvidenceTail);
 
 public static class ResearchReportRules
 {
@@ -33,10 +34,12 @@ public static class ResearchReportRules
         if (report.Status == ResearchResultStatus.DataBlocked && string.IsNullOrWhiteSpace(report.BlockReason))
             throw new InvalidOperationException("Data-blocked reports require a block reason.");
 
-        if (report.Status == ResearchResultStatus.Complete && report.Account is null)
-            throw new InvalidOperationException("Complete simulation reports require an account snapshot.");
+        if (report.Status == ResearchResultStatus.Complete &&
+            (report.Account is null || report.EvidenceTail is null))
+            throw new InvalidOperationException("Complete simulation reports require account state and execution evidence.");
 
-        if (report.Status != ResearchResultStatus.Complete && report.Account is not null)
-            throw new InvalidOperationException("Blocked or invalid reports cannot contain simulated performance state.");
+        if (report.Status != ResearchResultStatus.Complete &&
+            (report.Account is not null || report.EvidenceTail is not null))
+            throw new InvalidOperationException("Blocked or invalid reports cannot contain simulated performance state or execution evidence.");
     }
 }
