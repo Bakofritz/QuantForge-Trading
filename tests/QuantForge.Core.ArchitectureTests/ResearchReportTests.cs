@@ -10,18 +10,18 @@ public class ResearchReportTests
         var report = new ResearchReport(
             "job-1", ResearchResultStatus.DataBlocked,
             "data-sha", "strategy-sha", "exec-sha", "params-sha", "2026-Q1",
-            "authoritative market-data coverage is incomplete", null);
+            "authoritative market-data coverage is incomplete", null, null);
 
         ResearchReportRules.Validate(report);
     }
 
     [Fact]
-    public void Complete_report_requires_account_state()
+    public void Complete_report_requires_account_and_evidence_state()
     {
         var report = new ResearchReport(
             "job-1", ResearchResultStatus.Complete,
             "data-sha", "strategy-sha", "exec-sha", "params-sha", "2026-Q1",
-            null, null);
+            null, null, null);
 
         Assert.Throws<InvalidOperationException>(() => ResearchReportRules.Validate(report));
     }
