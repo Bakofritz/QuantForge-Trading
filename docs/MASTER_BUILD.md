@@ -31,7 +31,7 @@ This repository is maintained as a cumulative master build. Iterations are incre
 - Added deterministic next-eligible-event fill model.
 - Added explicit per-unit commission and slippage inputs.
 - Added append-only SHA-256 evidence-chain contract.
-- Added regression tests for deterministic fill arithmetic and evidence-chain divergence.
+- Added regression tests for deterministic fill and evidence-chain divergence.
 - No live order route or broker integration was introduced.
 
 ## v26.45 — Native Build Stabilization + Simulated Account/Reporting Foundation
@@ -44,12 +44,37 @@ This repository is maintained as a cumulative master build. Iterations are incre
 - Data-blocked and invalid reports cannot carry simulated performance state.
 - Added regression tests for account P&L, ledger isolation, and report blocking semantics.
 
-### Validation status
+### v26.45 validation
 - Source-level review: completed.
-- Native .NET validation: submitted to GitHub Actions after this commit; final pass/fail must be taken from the actual workflow result.
+- Native validation: submitted to GitHub Actions; final status was later corrected in v26.46.
 - Local native compilation is not claimed.
 - No trading performance numbers were generated.
 - No live broker or live-account path was introduced.
+
+## v26.46 — Native Stabilization Correction
+- Corrected the demonstrated simulated-account regression expectation from realized P&L 8 to 9; production accounting code was unchanged.
+- Confirmed the corrected branch with GitHub Actions run 36064442207: static repository gate passed, native restore/build passed, and tests passed.
+- Documentation validation runs 36064646375 and 36064649780 also passed.
+- No new authority, broker, live-account, or application-setting capability was introduced.
+- Local native compilation is not claimed; GitHub Actions remains the authoritative native validation environment for this stage.
+
+## v26.47 — Deterministic Research Runner + Simulation Ledger Integration
+- Baseline reviewed from v26.46 commit f4f0df930e6730f3b6d60c7aa558e041ee899bbb before modification.
+- Added ResearchRunRequest and DeterministicResearchRunner to connect admitted research jobs, simulation intents, ordered market events, deterministic fills, and isolated simulated accounts.
+- The runner validates research authority, data admission, strategy admission, reproducibility identity, execution timing, intent identity, and market-event ordering before creating performance state.
+- The runner selects the first market event at or after each intent's earliest eligible time; no same-bar shortcut or future-data access is introduced.
+- Data coverage failures produce DataBlocked reports with no account/performance state.
+- Admission failures produce Invalid reports with no account/performance state when the research identity is complete.
+- Added deterministic repeatability, causal fill, blocked-data, invalid-admission, and multi-strategy isolation regression coverage.
+- Added batch-level strategy/ledger independence enforcement.
+- No live broker, live-account trading, automatic order submission, or application-setting mutation was introduced.
+
+### v26.47 validation
+- Source and repository integrity review: completed before modification.
+- Native restore/build/test/static validation: pending GitHub Actions result for the v26.47 commit.
+- Local native compilation is not claimed.
+- This iteration does not add Android/Windows UI or platform publishing.
+- No trading performance claim is made by the deterministic runner tests; their assertions validate engine mechanics only.
 
 ## Build governance / approval workflow
 - Mellon initiates one controlled master-build inspection/planning cycle.
@@ -62,22 +87,15 @@ This repository is maintained as a cumulative master build. Iterations are incre
 - ZIP packaging is performed only after the approved repository state and commit are confirmed.
 - Cumulative documentation is appended to running files rather than generating redundant documentation families.
 
-## Next stability targets
-- Connect the simulated account to a deterministic execution/research runner rather than exposing it as a standalone contract.
-- Expand position accounting beyond long-only semantics where explicitly required by the approved design.
-- Add canonical report serialization and result-package fingerprints.
-- Add richer data-coverage/block-reason contracts.
-- Continue toward native Android/Windows application integration only after the core research contracts remain green.
-
-## Progress estimate after v26.45
-- Core research/simulation: 88%
-- Safety/governance: 93%
+## Progress estimate after v26.47
+- Core research/simulation: 93%
+- Safety/governance: 94%
 - Strategy quarantine/scrubbing/import: 86%
-- Historical-data integrity/provenance: 87%
-- Read-only multi-strategy research: 84%
-- Optimization/research admission: 80%
+- Historical-data integrity/provenance: 88%
+- Read-only multi-strategy research: 89%
+- Optimization/research admission: 84%
 - Native Android/Windows production: 45–50%
-- Full end-to-end implementation: 69–72%
-- Overall usable research platform: 82–85%
+- Full end-to-end implementation: 74–77%
+- Overall usable research platform: 87–90%
 
 These are engineering planning estimates, not runtime certification.
