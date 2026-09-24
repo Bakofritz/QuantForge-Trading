@@ -134,3 +134,12 @@ These are engineering planning estimates, not runtime certification.
 - Correction commit: 4a0257fc53f95ba3035b0d60d0a485659cac9a4e.
 - Native GitHub Actions validation is required before v26.49 can be called stable.
 - Local native compilation is not claimed.
+
+
+## Failed-iteration automatic correction rule
+- When a build iteration fails validation, the master-build process automatically enters a correction cycle rather than treating the failure as a stopping point.
+- The correction cycle must test the failed revision directly in the authoritative build environment available to the project (currently GitHub Actions for native .NET validation), inspect the resulting compiler, test, static-gate, or other validation output, and identify the specific defect before applying a correction.
+- Fixes must be evidence-driven and limited to the identified failure unless additional defects are directly exposed by the same validation cycle.
+- After each correction, the affected build/test environment is rerun and the new results are analyzed before the iteration can advance.
+- Failed iterations remain separately cataloged even when automatically corrected; a corrected iteration is a new correction candidate and does not inherit stable status.
+- This automatic correction authority does not bypass the existing approval gate for repository-changing iterations: the exact proposed correction must be approved before its commit, unless the correction is already covered by an explicit prior approval for that exact iteration and scope.
