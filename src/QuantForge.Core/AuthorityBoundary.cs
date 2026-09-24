@@ -21,6 +21,9 @@ public static class AuthorityBoundary
         if (domain == AuthorityDomain.LiveAccount)
             throw new InvalidOperationException("Live-account authority is outside the research runtime.");
 
-        return new ResearchAuthorityDecision(domain, false, false);
+        return new ResearchAuthorityDecision(
+            domain,
+            CanSubmitOrders: false,
+            CanChangeApplicationSettings: false);
     }
 }

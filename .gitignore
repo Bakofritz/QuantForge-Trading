@@ -1,0 +1,14 @@
+bin/
+obj/
+.vs/
+.idea/
+*.user
+*.suo
+TestResults/
+coverage/
+artifacts/tmp/
+*.db
+*.sqlite
+*.sqlite3
+secrets/
+.env
