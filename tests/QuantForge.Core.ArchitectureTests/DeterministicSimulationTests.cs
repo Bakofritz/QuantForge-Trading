@@ -21,6 +21,7 @@ public class DeterministicSimulationTests
         var fill = DeterministicFillModel.FillAtNextEligibleEvent(
             intent, market, 0.50m, 0.25m);
 
+        Assert.Equal(SimulationSide.Buy, fill.Side);
         Assert.Equal(100.25m, fill.Price);
         Assert.Equal(1.00m, fill.Commission);
         Assert.Equal(0.50m, fill.Slippage);

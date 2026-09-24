@@ -34,28 +34,50 @@ This repository is maintained as a cumulative master build. Iterations are incre
 - Added regression tests for deterministic fill arithmetic and evidence-chain divergence.
 - No live order route or broker integration was introduced.
 
+## v26.45 — Native Build Stabilization + Simulated Account/Reporting Foundation
+- Rebased the v26.45 working branch onto the confirmed v26.44 source baseline after detecting that main did not yet contain v26.41–v26.44.
+- Corrected the native test-project compile failure by adding the explicit xUnit global using required by the test sources.
+- Preserved the research-only authority boundary.
+- Extended SimulationFill identity to retain buy/sell side so account-state semantics cannot infer direction from quantity.
+- Added isolated simulated-account state with cash, long position, average entry price, realized P&L, unrealized P&L, and equity snapshots.
+- Added reproducible research-report contract with explicit Complete, DataBlocked, and Invalid states.
+- Data-blocked and invalid reports cannot carry simulated performance state.
+- Added regression tests for account P&L, ledger isolation, and report blocking semantics.
+
 ### Validation status
-- Static architecture review: completed.
-- Native .NET compile/test: not locally available.
-- GitHub Actions native validation: configured; run status must be observed before claiming pass.
+- Source-level review: completed.
+- Native .NET validation: submitted to GitHub Actions after this commit; final pass/fail must be taken from the actual workflow result.
+- Local native compilation is not claimed.
 - No trading performance numbers were generated.
+- No live broker or live-account path was introduced.
 
-## v26.45 — Account-state and report contracts
-Next stability target:
-- isolated simulated account state
-- realized/unrealized P&L ledger semantics
-- report schema with explicit data-blocked state
-- reproducible research result package
+## Build governance / approval workflow
+- Mellon initiates one controlled master-build inspection/planning cycle.
+- The authoritative repository is Bakofritz/QuantForge-Trading.
+- Each iteration starts by reviewing the last confirmed stable repository source and checking repository integrity.
+- Planned build contents, affected paths, baseline SHA, branch, intended commit, and validation plan are presented before packaging or repository changes.
+- The build remains queued until the user explicitly approves the exact proposal.
+- Material changes to an approved proposal require a new approval.
+- A successful scrub, simulation, replay, optimization, or research approval never grants LiveAccount authority.
+- ZIP packaging is performed only after the approved repository state and commit are confirmed.
+- Cumulative documentation is appended to running files rather than generating redundant documentation families.
 
-## Progress estimate after v26.44
-- Core research/simulation: 84%
-- Safety/governance: 92%
+## Next stability targets
+- Connect the simulated account to a deterministic execution/research runner rather than exposing it as a standalone contract.
+- Expand position accounting beyond long-only semantics where explicitly required by the approved design.
+- Add canonical report serialization and result-package fingerprints.
+- Add richer data-coverage/block-reason contracts.
+- Continue toward native Android/Windows application integration only after the core research contracts remain green.
+
+## Progress estimate after v26.45
+- Core research/simulation: 88%
+- Safety/governance: 93%
 - Strategy quarantine/scrubbing/import: 86%
 - Historical-data integrity/provenance: 87%
 - Read-only multi-strategy research: 84%
-- Optimization/research admission: 79%
+- Optimization/research admission: 80%
 - Native Android/Windows production: 45–50%
-- Full end-to-end implementation: 66–70%
-- Overall usable research platform: 80–84%
+- Full end-to-end implementation: 69–72%
+- Overall usable research platform: 82–85%
 
 These are engineering planning estimates, not runtime certification.

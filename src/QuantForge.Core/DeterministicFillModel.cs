@@ -3,6 +3,7 @@ namespace QuantForge.Core;
 public readonly record struct SimulationFill(
     string StrategyId,
     string LedgerNamespace,
+    SimulationSide Side,
     DateTimeOffset FillTime,
     decimal Price,
     decimal Quantity,
@@ -34,6 +35,7 @@ public static class DeterministicFillModel
         return new SimulationFill(
             intent.StrategyId,
             intent.LedgerNamespace,
+            intent.Side,
             market.Timestamp,
             fillPrice,
             intent.Quantity,
