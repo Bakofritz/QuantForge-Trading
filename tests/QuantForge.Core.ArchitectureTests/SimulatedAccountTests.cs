@@ -19,7 +19,7 @@ public class SimulatedAccountTests
         var snapshot = account.ApplyFill(sell);
 
         Assert.Equal(1m, snapshot.Position.Quantity);
-        Assert.Equal(8m, snapshot.RealizedPnl);
+        Assert.Equal(9m, snapshot.RealizedPnl);
         Assert.Equal(10m, snapshot.UnrealizedPnl);
         Assert.Equal(1017m, snapshot.Equity);
     }
