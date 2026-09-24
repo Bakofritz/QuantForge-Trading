@@ -27,29 +27,35 @@ This repository is maintained as a cumulative master build. Iterations are incre
 - Added regression coverage for OHLC integrity, causal fill timing, and multi-strategy isolation.
 - No broker or live-account adapter was added.
 
+## v26.44 — Deterministic Fill + Evidence Layer
+- Added deterministic next-eligible-event fill model.
+- Added explicit per-unit commission and slippage inputs.
+- Added append-only SHA-256 evidence-chain contract.
+- Added regression tests for deterministic fill arithmetic and evidence-chain divergence.
+- No live order route or broker integration was introduced.
+
 ### Validation status
 - Static architecture review: completed.
 - Native .NET compile/test: not locally available.
 - GitHub Actions native validation: configured; run status must be observed before claiming pass.
 - No trading performance numbers were generated.
 
-## v26.44 — Execution simulation and evidence ledger
+## v26.45 — Account-state and report contracts
 Next stability target:
-- deterministic fill-model interface
-- transaction-cost/slippage policy
-- append-only evidence chain
-- portfolio/account state transitions
-- reproducible simulation report schema
+- isolated simulated account state
+- realized/unrealized P&L ledger semantics
+- report schema with explicit data-blocked state
+- reproducible research result package
 
-## Progress estimate after v26.43
-- Core research/simulation: 82%
+## Progress estimate after v26.44
+- Core research/simulation: 84%
 - Safety/governance: 92%
 - Strategy quarantine/scrubbing/import: 86%
 - Historical-data integrity/provenance: 87%
-- Read-only multi-strategy research: 83%
-- Optimization/research admission: 78%
+- Read-only multi-strategy research: 84%
+- Optimization/research admission: 79%
 - Native Android/Windows production: 45–50%
-- Full end-to-end implementation: 64–68%
-- Overall usable research platform: 79–83%
+- Full end-to-end implementation: 66–70%
+- Overall usable research platform: 80–84%
 
 These are engineering planning estimates, not runtime certification.
