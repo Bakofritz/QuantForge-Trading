@@ -99,3 +99,21 @@ This repository is maintained as a cumulative master build. Iterations are incre
 - Overall usable research platform: 87–90%
 
 These are engineering planning estimates, not runtime certification.
+
+
+## v26.48 — Deterministic Execution Evidence + Multi-Intent Ledger Completion
+- Baseline reviewed from v26.47 closeout commit 3d07acedf430937136d20868e6094651058eb97c before modification.
+- Added deterministic research execution evidence rooted in the admitted research job identity.
+- Every accepted simulation fill is appended to the existing SHA-256 evidence chain with canonical fill payload fields, preserving sequence and prior-fingerprint linkage.
+- Complete research reports now require both a final simulated-account snapshot and an execution-evidence tail; DataBlocked and Invalid reports cannot carry either performance state or execution evidence.
+- Multiple intents are processed in deterministic causal order and consume distinct ordered market events, preventing later intents from silently reusing an already-consumed event.
+- Added regression coverage for multi-intent buy/sell lifecycle, insufficient-position rejection, commission/slippage accounting, evidence repeatability, and report evidence requirements.
+- Existing admission, authority, causal-timing, strategy identity, and ledger namespace gates remain fail-closed.
+- No live broker, live-account trading, automatic order submission, credentials/secrets, or application-setting mutation was introduced.
+- No Android/Windows UI or platform publishing was added.
+
+### v26.48 validation
+- Repository integrity was reviewed from the confirmed v26.47 source tree before modification.
+- Native restore/build/test/static validation is pending GitHub Actions for the final v26.48 revision.
+- Local native compilation is not claimed.
+- No trading performance claim is made; regression assertions validate deterministic engine mechanics only.
