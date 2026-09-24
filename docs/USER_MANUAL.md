@@ -84,6 +84,10 @@ An imported artifact should retain:
 - sanitized fingerprint
 - scrub-report identity
 
+## v26.46 validation record
+
+GitHub Actions run **36064442207** validated commit `f4f0df930e6730f3b6d60c7aa558e041ee899bbb` successfully. Both the static repository gate and native .NET restore/build/test job passed. This validates the tested source revision only; it does not certify Android/Windows product completion or grant live-account authority.
+
 ## Current implementation status
 
 The native .NET source and architecture tests are being built incrementally. GitHub Actions is the authoritative native build/test environment for this stage.
