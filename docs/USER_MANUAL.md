@@ -2,67 +2,77 @@
 
 ## What QuantForge is
 
-QuantForge is a research and controlled simulation platform. It is designed to audit imported strategies, validate market data, run causal backtests/replays, perform read-only optimization, and conduct simulated forward testing.
+QuantForge is a research and controlled-simulation platform for strategy auditing, market-data validation, causal backtesting/replay, read-only optimization, and simulated forward testing.
 
-It does not silently convert research approval into live trading authority.
+Research approval never grants live-account authority.
 
-## First-run mental model
+## The six safety gates
 
-Think of QuantForge as a series of locked gates:
+1. **Data gate** — market data must be identified, fingerprinted, structurally validated, and admitted.
+2. **Strategy gate** — imported code is quarantined and its capabilities are inventoried.
+3. **Feature-selection gate** — the user may select research-safe strategy components; order submission and application-setting mutation are excluded from research authority.
+4. **Authority gate** — every job receives an explicit authority domain.
+5. **Causal/execution gate** — no future information and no silent same-bar fills.
+6. **Evidence gate** — results are bound to reproducibility identities and provenance.
 
-1. Data gate — Is the market data structurally valid and traceable?
-2. Strategy gate — What can the imported code actually do?
-3. Authority gate — What is the strategy allowed to do in this research job?
-4. Causal gate — Could any information from the future reach the decision?
-5. Execution gate — When is a signal actually allowed to become a simulated fill?
-6. Evidence gate — Can the result be reproduced from immutable identities?
+A failed gate blocks the job.
 
-A failed gate blocks the research job.
+## Strategy import workflow
 
-## Importing a strategy
+quarantine → original fingerprint → static scrub → capability inventory → user feature selection → sanitized artifact → regression validation → provenance registration → research admission.
 
-Imported code first enters quarantine. QuantForge records the original fingerprint, scans for capability categories, and creates an inventory for user review.
+The original source remains distinct from the sanitized representation.
 
-The scrubber does not grant live trading permission.
+## Research domains
 
-Research admission is intended for historical, replay, simulated-account, and read-only research domains.
+- Historical research
+- Simulated replay
+- Simulated account
+- Read-only research/optimization
+- Live account — separately restricted
 
-## Backtesting and optimization
+Research jobs cannot submit orders or change application settings.
 
-A valid research result requires identified data, explicit timeframe/session semantics, transaction costs, slippage/fill assumptions, strategy parameters, and temporal partitions.
+## Optimization
 
-Optimization is read-only. It may analyze one or many admitted strategies against approved market data, but it cannot enter positions or change application settings.
+Optimization is read-only. It may evaluate one or many admitted strategies against approved market data.
 
-No fabricated performance metrics are acceptable. If authoritative data is unavailable, the result is data-blocked.
+Every run must identify its dataset, strategy, execution policy, parameter set, temporal partition, and job identity.
 
-## Forward testing
+If authoritative data is unavailable or incomplete for the requested claim, QuantForge must report a data-blocked state instead of manufacturing performance.
 
-Forward testing uses a simulated account and ledger. The simulated environment is isolated from live-account authority.
+## Causal integrity
 
-A current-bar signal cannot silently become a same-bar fill. Use next-bar-open, next-eligible-tick, or an explicitly modeled close auction.
+At observation time T, only information available at or before T may be used. Unfinished higher-timeframe bars are not treated as observed information.
 
-## Results
+Violations are hard rejection conditions.
 
-Every publishable research result should identify:
-- dataset and SHA-256 fingerprint
-- strategy and SHA-256 fingerprint
-- execution policy
-- parameter set
-- temporal partition
-- research-job identity
-- cost/slippage assumptions
-- validation status
+## Execution timing
 
-## Current limitation
+Default research execution uses next-bar-open or next-eligible-tick semantics. Same-bar execution requires an explicit close-auction model.
 
-Native .NET compilation and native Android/Windows runtime are not claimed until validated in an environment with the required SDK/toolchain.
+## Provenance
+
+An imported artifact should retain:
+- source URI
+- retrieval time
+- SHA-256
+- original fingerprint
+- sanitized fingerprint
+- scrub-report identity
+
+## Current implementation status
+
+The native .NET source and architecture tests are being built incrementally. Local native compilation is not claimed until the required SDK is available and the build/test gate actually passes.
 
 ## Troubleshooting
 
-**Research job blocked:** inspect the first failed gate; do not bypass it.
+**Import blocked:** inspect the capability inventory and feature-selection result.
 
-**Strategy rejected:** review the capability inventory and research authority manifest.
+**Research job blocked:** inspect the first failed admission gate.
 
-**Backtest rejected:** verify data admission, temporal partition, and execution timing.
+**Backtest blocked:** verify data admission, temporal partition, and execution timing.
 
-**Performance unavailable:** confirm that authoritative historical data has been admitted. QuantForge must report data-blocked status instead of inventing numbers.
+**Optimization has no performance:** verify that authoritative data bytes were actually admitted. A data-blocked result is expected when source coverage is incomplete.
+
+**CI not green:** do not treat the presence of tests as proof of a passing build; use the workflow result.
