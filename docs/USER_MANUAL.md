@@ -45,7 +45,7 @@ If authoritative data is unavailable or incomplete for the requested claim, Quan
 
 A simulated account is isolated by ledger namespace. A fill from another namespace is rejected.
 
-The current v26.45 account contract tracks:
+The current account contract tracks:
 - cash
 - long position quantity
 - average entry price
@@ -54,6 +54,30 @@ The current v26.45 account contract tracks:
 - equity
 
 A sell cannot exceed the simulated long position. Short-position accounting is not implicitly enabled by this contract.
+
+## Deterministic research runner
+
+The research runner is the controlled path that connects an admitted research job to simulation.
+
+Workflow:
+1. Validate authority, data, strategy, job identity, and execution timing.
+2. Validate that every intent belongs to the admitted strategy and one isolated ledger namespace.
+3. Validate and order the supplied market-event sequence.
+4. For each intent, locate the first market event whose timestamp is at or after the intent's earliest eligible fill time.
+5. Apply the deterministic fill model with explicit commission and slippage.
+6. Apply fills to the isolated simulated account.
+7. Value the final account against the final admitted market close.
+8. Emit a reproducibility-bound research report.
+
+If any requested intent has no eligible market event, the runner emits DataBlocked and does not create performance state.
+
+If admission validation fails after a complete research identity is present, the runner emits Invalid and does not create performance state.
+
+## Multi-strategy research
+
+Batch execution requires unique strategy identities and independent ledger namespaces.
+
+One strategy cannot consume another strategy's simulated ledger. A shared strategy identity is rejected before batch execution.
 
 ## Research reports
 
@@ -74,6 +98,8 @@ Violations are hard rejection conditions.
 
 Default research execution uses next-bar-open or next-eligible-tick semantics. Same-bar execution requires an explicit close-auction model.
 
+The deterministic runner never converts a signal into a same-bar fill merely because an event is present in the same dataset.
+
 ## Provenance
 
 An imported artifact should retain:
@@ -86,9 +112,11 @@ An imported artifact should retain:
 
 ## Current implementation status
 
-The native .NET source and architecture tests are being built incrementally. GitHub Actions is the authoritative native build/test environment for this stage.
+The native .NET source and architecture tests are built incrementally. GitHub Actions is the authoritative native build/test environment for this stage.
 
 A green test workflow is evidence for the tested source revision only; it is not a claim of completed Android/Windows product functionality.
+
+v26.47 adds the first integrated deterministic research execution path over the existing admission, causal timing, fill, simulated-account, and reporting contracts. Platform UI and live broker capabilities remain outside this iteration.
 
 ## Troubleshooting
 
@@ -99,5 +127,9 @@ Research job blocked: inspect the first failed admission gate.
 Backtest blocked: verify data admission, temporal partition, and execution timing.
 
 Optimization has no performance: verify that authoritative data bytes were actually admitted. A data-blocked result is expected when source coverage is incomplete.
+
+Runner returns DataBlocked: verify that the admitted market-event sequence reaches every intent's earliest eligible fill time.
+
+Runner returns Invalid: inspect the report block reason and correct the failed admission contract; do not bypass the admission gate.
 
 CI not green: do not treat the presence of tests as proof of a passing build; use the workflow result.
