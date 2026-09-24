@@ -31,6 +31,8 @@ public class ResearchRunnerTests
         Assert.Equal(2m, first.Account.Value.Position.Quantity);
         Assert.Equal(100m, first.Account.Value.Position.AveragePrice);
         Assert.Equal(1010m, first.Account.Value.Equity);
+        Assert.NotNull(first.EvidenceTail);
+        Assert.Equal(1, first.EvidenceTail.Value.Sequence);
     }
 
     [Fact]
@@ -72,6 +74,103 @@ public class ResearchRunnerTests
         Assert.Equal(ResearchResultStatus.Invalid, report.Status);
         Assert.Null(report.Account);
         Assert.Contains("Data admission", report.BlockReason);
+    }
+
+    [Fact]
+    public void Runner_processes_multiple_intents_in_causal_order_and_records_each_fill()
+    {
+        var request = CreateRequest(
+            new[]
+            {
+                new SimulationIntent(
+                    "s1", "batch|s1|account", SimulationSide.Buy,
+                    SimulationIntentType.Market, 1m,
+                    At(10, 0), At(10, 1)),
+                new SimulationIntent(
+                    "s1", "batch|s1|account", SimulationSide.Sell,
+                    SimulationIntentType.Market, 1m,
+                    At(10, 2), At(10, 3))
+            },
+            new[]
+            {
+                Event(1, 10, 1, 100m),
+                Event(2, 10, 3, 110m),
+                Event(3, 10, 4, 105m)
+            });
+
+        var report = DeterministicResearchRunner.Run(request);
+
+        Assert.Equal(ResearchResultStatus.Complete, report.Status);
+        Assert.NotNull(report.Account);
+        Assert.Equal(0m, report.Account.Value.Position.Quantity);
+        Assert.Equal(10m, report.Account.Value.RealizedPnl);
+        Assert.Equal(1010m, report.Account.Value.Equity);
+        Assert.NotNull(report.EvidenceTail);
+        Assert.Equal(2, report.EvidenceTail.Value.Sequence);
+    }
+
+    [Fact]
+    public void Runner_rejects_sell_that_exceeds_available_position()
+    {
+        var request = CreateRequest(
+            new[]
+            {
+                new SimulationIntent(
+                    "s1", "batch|s1|account", SimulationSide.Sell,
+                    SimulationIntentType.Market, 1m,
+                    At(10, 0), At(10, 1))
+            },
+            new[] { Event(1, 10, 1, 100m) });
+
+        Assert.Throws<InvalidOperationException>(() => DeterministicResearchRunner.Run(request));
+    }
+
+    [Fact]
+    public void Runner_applies_commission_and_slippage_deterministically()
+    {
+        var request = CreateRequest(
+            new[]
+            {
+                new SimulationIntent(
+                    "s1", "batch|s1|account", SimulationSide.Buy,
+                    SimulationIntentType.Market, 2m,
+                    At(10, 0), At(10, 1))
+            },
+            new[] { Event(1, 10, 1, 100m) });
+
+        request = request with { CommissionPerUnit = 0.50m, SlippagePerUnit = 0.25m };
+        var report = DeterministicResearchRunner.Run(request);
+
+        Assert.Equal(100.25m, report.Account.Value.Position.AveragePrice);
+        Assert.Equal(798.50m, report.Account.Value.Cash);
+        Assert.Equal(999m, report.Account.Value.Equity);
+    }
+
+    [Fact]
+    public void Runner_repeated_runs_produce_identical_execution_evidence()
+    {
+        var request = CreateRequest(
+            new[]
+            {
+                new SimulationIntent(
+                    "s1", "batch|s1|account", SimulationSide.Buy,
+                    SimulationIntentType.Market, 1m,
+                    At(10, 0), At(10, 1)),
+                new SimulationIntent(
+                    "s1", "batch|s1|account", SimulationSide.Sell,
+                    SimulationIntentType.Market, 1m,
+                    At(10, 2), At(10, 3))
+            },
+            new[]
+            {
+                Event(1, 10, 1, 100m),
+                Event(2, 10, 3, 110m)
+            });
+
+        var first = DeterministicResearchRunner.Run(request);
+        var second = DeterministicResearchRunner.Run(request);
+
+        Assert.Equal(first.EvidenceTail, second.EvidenceTail);
     }
 
     [Fact]
