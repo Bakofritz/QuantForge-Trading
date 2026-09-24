@@ -19,29 +19,37 @@ This repository is maintained as a cumulative master build. Iterations are incre
 - Research feature selection rejects order submission, application-setting mutation, and unreviewed process/native-library execution.
 - Added regression tests for manifest round-trip, live-authority rejection, and feature selection.
 
+## v26.43 — Deterministic Research Execution Skeleton
+- Added validated market-event contract.
+- Added research-only simulation intent contract with causal earliest-fill constraint.
+- Added isolated ledger namespace and ledger-evidence contracts.
+- Added multi-strategy research-batch identity validation with duplicate strategy rejection.
+- Added regression coverage for OHLC integrity, causal fill timing, and multi-strategy isolation.
+- No broker or live-account adapter was added.
+
 ### Validation status
-- Static source review: completed.
+- Static architecture review: completed.
 - Native .NET compile/test: not locally available.
 - GitHub Actions native validation: configured; run status must be observed before claiming pass.
 - No trading performance numbers were generated.
 
-## v26.43 — Deterministic Research Execution Skeleton
+## v26.44 — Execution simulation and evidence ledger
 Next stability target:
-- deterministic market-event interfaces
-- simulated order/fill model
-- isolated ledger namespace
-- multi-strategy job coordinator
-- append-only evidence records
+- deterministic fill-model interface
+- transaction-cost/slippage policy
+- append-only evidence chain
+- portfolio/account state transitions
+- reproducible simulation report schema
 
-## Progress estimate after v26.42
-- Core research/simulation: 80%
+## Progress estimate after v26.43
+- Core research/simulation: 82%
 - Safety/governance: 92%
 - Strategy quarantine/scrubbing/import: 86%
-- Historical-data integrity/provenance: 86%
-- Read-only multi-strategy research: 80%
-- Optimization/research admission: 77%
+- Historical-data integrity/provenance: 87%
+- Read-only multi-strategy research: 83%
+- Optimization/research admission: 78%
 - Native Android/Windows production: 45–50%
-- Full end-to-end implementation: 62–66%
-- Overall usable research platform: 77–81%
+- Full end-to-end implementation: 64–68%
+- Overall usable research platform: 79–83%
 
 These are engineering planning estimates, not runtime certification.
