@@ -147,6 +147,7 @@ public class ResearchRunnerTests
         Assert.Equal(100.25m, account.Position.AveragePrice);
         Assert.Equal(798.50m, account.Cash);
         Assert.Equal(998.50m, account.Equity);
+        Assert.Equal(account.Cash + (account.Position.Quantity * account.MarketPrice), account.Equity);
     }
 
     [Fact]
