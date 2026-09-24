@@ -133,3 +133,13 @@ Runner returns DataBlocked: verify that the admitted market-event sequence reach
 Runner returns Invalid: inspect the report block reason and correct the failed admission contract; do not bypass the admission gate.
 
 CI not green: do not treat the presence of tests as proof of a passing build; use the workflow result.
+
+
+## v26.48 additions
+The deterministic runner now produces an append-only execution-evidence chain for completed simulations. The evidence root is derived from the admitted research job identity, and each accepted fill is linked by sequence number and prior fingerprint.
+
+Multiple simulation intents are processed in chronological signal order and consume successive eligible market events. This means a later intent cannot silently reuse the market event already used by an earlier intent.
+
+A Complete report must contain both simulated account state and an evidence-chain tail. DataBlocked and Invalid reports contain neither. This keeps blocked or invalid research from becoming performance evidence.
+
+The simulated account lifecycle is covered by regression tests for buy/sell, insufficient position rejection, commission, slippage, final valuation, and repeated deterministic evidence.
