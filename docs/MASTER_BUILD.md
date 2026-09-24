@@ -51,6 +51,18 @@ This repository is maintained as a cumulative master build. Iterations are incre
 - No trading performance numbers were generated.
 - No live broker or live-account path was introduced.
 
+## v26.46 — Native Validation Correction
+- Corrected the simulated-account regression test expectation from realized P&L `8` to `9`, matching the implemented commission-aware accounting semantics.
+- No production accounting behavior changed; no new authority, live-account, broker, or settings capability was introduced.
+
+### v26.46 validation
+- GitHub Actions run **36064442207** completed successfully.
+- `static-contract-gate`: **success**.
+- `dotnet-tests`: **success**.
+- Native restore, build, and tests: **success**.
+- Validated commit: `f4f0df930e6730f3b6d60c7aa558e041ee899bbb`.
+- Local native compilation is not claimed.
+
 ## Build governance / approval workflow
 - Mellon initiates one controlled master-build inspection/planning cycle.
 - The authoritative repository is Bakofritz/QuantForge-Trading.
