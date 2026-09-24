@@ -86,6 +86,8 @@ This repository is maintained as a cumulative master build. Iterations are incre
 - A successful scrub, simulation, replay, optimization, or research approval never grants LiveAccount authority.
 - ZIP packaging is performed only after the approved repository state and commit are confirmed.
 - Cumulative documentation is appended to running files rather than generating redundant documentation families.
+- Failed iterations are cataloged separately from stable releases. A failed build remains historical evidence and is never labeled stable merely because a later correction exists.
+- Correction iterations remain candidates until native build and tests pass; a correction does not inherit stable status from its predecessor.
 
 ## Progress estimate after v26.47
 - Core research/simulation: 93%
@@ -114,6 +116,20 @@ These are engineering planning estimates, not runtime certification.
 
 ### v26.48 validation
 - Repository integrity was reviewed from the confirmed v26.47 source tree before modification.
-- Native restore/build/test/static validation is pending GitHub Actions for the final v26.48 revision.
+- GitHub Actions run 36067507767: static-contract-gate passed; restore passed; native build failed on test-project nullability error CS8629 in ResearchRunnerTests.cs line 144; tests were skipped.
+- Status: FAILED / NON-STABLE.
+- The complete failed-iteration record is cataloged separately under releases/failed/v26.48/ and releases/FAILED_ITERATIONS.md.
 - Local native compilation is not claimed.
 - No trading performance claim is made; regression assertions validate deterministic engine mechanics only.
+
+## v26.49 — Native Build Correction + Failed/Stable Catalog Separation
+- Baseline: v26.48 commit 815160dd454b0e29e337fce342a0e993cf3be259.
+- Corrected the test-project nullable-value handling in ResearchRunnerTests.cs so the compiler can establish the account is present before accessing its value.
+- Added explicit failed-iteration cataloging for v26.48, including its failing commit, CI run, compiler error, and non-stable classification.
+- Added release-archive guidance distinguishing stable records, failed records, and correction candidates.
+- Preserved all v26.48 execution-evidence behavior and research/live authority boundaries.
+- No live broker, live account, automatic order submission, credentials, application-setting mutation, or Android/Windows UI was introduced.
+
+### v26.49 validation
+- Native GitHub Actions validation is required before v26.49 can be called stable.
+- Local native compilation is not claimed.

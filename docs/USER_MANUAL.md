@@ -110,13 +110,21 @@ An imported artifact should retain:
 - sanitized fingerprint
 - scrub-report identity
 
+## Build-status catalog
+
+QuantForge keeps failed iterations separate from stable releases and from correction candidates.
+
+- **Stable:** only an iteration whose required native build and tests have passed.
+- **Failed:** an iteration with a documented validation failure. It remains historical evidence and is not promoted by later fixes.
+- **Correction candidate:** an iteration intended to repair a failed build. It remains non-stable until independently validated.
+
+For example, v26.48 is cataloged as a failed iteration because its GitHub Actions native build stopped on compiler error CS8629. Its source and CI evidence remain available for historical reference, while v26.49 is treated as a separate correction candidate.
+
 ## Current implementation status
 
 The native .NET source and architecture tests are built incrementally. GitHub Actions is the authoritative native build/test environment for this stage.
 
 A green test workflow is evidence for the tested source revision only; it is not a claim of completed Android/Windows product functionality.
-
-v26.47 adds the first integrated deterministic research execution path over the existing admission, causal timing, fill, simulated-account, and reporting contracts. Platform UI and live broker capabilities remain outside this iteration.
 
 ## Troubleshooting
 
@@ -134,8 +142,8 @@ Runner returns Invalid: inspect the report block reason and correct the failed a
 
 CI not green: do not treat the presence of tests as proof of a passing build; use the workflow result.
 
-
 ## v26.48 additions
+
 The deterministic runner now produces an append-only execution-evidence chain for completed simulations. The evidence root is derived from the admitted research job identity, and each accepted fill is linked by sequence number and prior fingerprint.
 
 Multiple simulation intents are processed in chronological signal order and consume successive eligible market events. This means a later intent cannot silently reuse the market event already used by an earlier intent.
@@ -143,3 +151,9 @@ Multiple simulation intents are processed in chronological signal order and cons
 A Complete report must contain both simulated account state and an evidence-chain tail. DataBlocked and Invalid reports contain neither. This keeps blocked or invalid research from becoming performance evidence.
 
 The simulated account lifecycle is covered by regression tests for buy/sell, insufficient position rejection, commission, slippage, final valuation, and repeated deterministic evidence.
+
+## v26.49 additions
+
+v26.49 corrects the native test-project nullability compile failure identified by GitHub Actions for v26.48.
+
+The correction does not weaken research admission, execution timing, evidence-chain, simulated-account, or live-account authority boundaries. It is independently validated and classified as stable only if the complete required GitHub Actions workflow passes.

@@ -28,9 +28,10 @@ public class ResearchRunnerTests
         Assert.Equal(ResearchResultStatus.Complete, first.Status);
         Assert.Equal(first, second);
         Assert.NotNull(first.Account);
-        Assert.Equal(2m, first.Account.Value.Position.Quantity);
-        Assert.Equal(100m, first.Account.Value.Position.AveragePrice);
-        Assert.Equal(1010m, first.Account.Value.Equity);
+        var account = first.Account ?? throw new InvalidOperationException("Expected a complete report to contain an account.");
+        Assert.Equal(2m, account.Position.Quantity);
+        Assert.Equal(100m, account.Position.AveragePrice);
+        Assert.Equal(1010m, account.Equity);
         Assert.NotNull(first.EvidenceTail);
         Assert.Equal(1, first.EvidenceTail.Value.Sequence);
     }
@@ -102,9 +103,10 @@ public class ResearchRunnerTests
 
         Assert.Equal(ResearchResultStatus.Complete, report.Status);
         Assert.NotNull(report.Account);
-        Assert.Equal(0m, report.Account.Value.Position.Quantity);
-        Assert.Equal(10m, report.Account.Value.RealizedPnl);
-        Assert.Equal(1010m, report.Account.Value.Equity);
+        var account = report.Account ?? throw new InvalidOperationException("Expected a complete report to contain an account.");
+        Assert.Equal(0m, account.Position.Quantity);
+        Assert.Equal(10m, account.RealizedPnl);
+        Assert.Equal(1010m, account.Equity);
         Assert.NotNull(report.EvidenceTail);
         Assert.Equal(2, report.EvidenceTail.Value.Sequence);
     }
@@ -140,10 +142,11 @@ public class ResearchRunnerTests
 
         request = request with { CommissionPerUnit = 0.50m, SlippagePerUnit = 0.25m };
         var report = DeterministicResearchRunner.Run(request);
+        var account = report.Account ?? throw new InvalidOperationException("Expected a complete report to contain an account.");
 
-        Assert.Equal(100.25m, report.Account.Value.Position.AveragePrice);
-        Assert.Equal(798.50m, report.Account.Value.Cash);
-        Assert.Equal(999m, report.Account.Value.Equity);
+        Assert.Equal(100.25m, account.Position.AveragePrice);
+        Assert.Equal(798.50m, account.Cash);
+        Assert.Equal(999m, account.Equity);
     }
 
     [Fact]
