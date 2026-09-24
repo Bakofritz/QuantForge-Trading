@@ -149,3 +149,14 @@ These are engineering planning estimates, not runtime certification.
 - Once an iteration is confirmed stable, Mellon continues inspection and planning toward the next stable master-build iteration, while preserving the existing approval gate before any new or materially changed repository mutation.
 - Mellon never bypasses required user approval, protected-main controls, safety boundaries, live-account restrictions, or the requirement for authoritative validation.
 - Mellon progression is intended to continue as far as stability and validation permit rather than stopping merely because an individual error was encountered.
+
+## Mellon multi-cycle correction and validation addendum
+- Within a user-approved master-build iteration, Mellon may perform multiple sequential correction/validation cycles without requesting a new approval for each individual evidence-driven correction that remains within the exact approved iteration scope.
+- Each cycle reviews the latest authoritative GitHub source and validation state, analyzes actual compiler/build/test/static-gate/data-integrity results, identifies the specific exposed defect, applies an evidence-driven correction, and reruns authoritative validation.
+- The cycle may repeat as additional directly exposed defects are discovered. Mellon does not stop merely because the first correction reveals another failure.
+- The iteration does not advance to stable status after compilation alone. After successful compilation, Mellon must run the required test suite and regression validation, then validate applicable data-integrity, reproducibility, authority-boundary, and safety contracts.
+- Successful automated validation places the iteration in **QUEUED FOR USER REVIEW** status. Mellon then presents the complete build record, progress percentages, validation evidence, current hangups if any, and proposed stable-release status for manual approval under the existing approval rules.
+- Mellon may not merge to protected main, promote the iteration to stable, package the final release, or make materially changed scope without the required human approval.
+- If a required correction would materially expand the approved iteration scope, Mellon stops the autonomous cycle, queues the changed proposal, and requests a new approval.
+- Failed iterations remain separately cataloged from corrected and stable iterations throughout the multi-cycle process.
+- The multi-cycle rule does not grant live-account, live-broker, automatic-order, credential, or application-setting authority.
