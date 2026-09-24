@@ -160,3 +160,26 @@ These are engineering planning estimates, not runtime certification.
 - If a required correction would materially expand the approved iteration scope, Mellon stops the autonomous cycle, queues the changed proposal, and requests a new approval.
 - Failed iterations remain separately cataloged from corrected and stable iterations throughout the multi-cycle process.
 - The multi-cycle rule does not grant live-account, live-broker, automatic-order, credential, or application-setting authority.
+
+## Mellon domain-correctness flagging and non-blocking defect rule
+- Mellon separates **program/build stability** from **domain-calculation correctness**.
+- Compilation failures, broken basic program functions, safety/authority failures, data-integrity failures, broken research execution, evidence/provenance failures, and defects that could permit unauthorized live-account behavior remain blocking failures and must be corrected before stability can be declared.
+- Domain-specific calculation defects may be logged and flagged without blocking overall program stabilization when the underlying program, build, core functions, safety boundaries, research execution, and required integrity contracts operate correctly.
+- Examples include trade-calculation discrepancies, commission/slippage-model discrepancies, indicator calculations, market-analysis calculations, strategy-specific mathematics, optimization calculations, performance statistics, and calibration differences.
+- A flagged domain defect must never be silently treated as correct. It must be recorded with the affected component, observed behavior, expected behavior when known, reproduction information when available, and an appropriate severity/priority for later correction.
+- A build may therefore reach **STABLE PROGRAM BUILD / DOMAIN ISSUES FLAGGED** status when all blocking stability requirements pass while one or more non-blocking domain-correctness issues remain open.
+- A stable program build does not mean that all trading or research mathematics are fully calibrated or correct.
+- Mellon continues broader stabilization while carrying flagged domain defects forward for subsequent correction and validation cycles.
+- The user must be clearly informed of material flagged domain defects when a build is presented for manual review.
+- This rule does not weaken live-account restrictions, safety gates, data admission, authority separation, evidence requirements, or protected-main approval controls.
+
+## Mellon prompt-form master rule — human-readable copy
+> **MELLON:** Continue the QuantForge master-build process automatically within the approved scope. Inspect the latest authoritative source, find actual failures, correct them, rebuild, test, and validate. Repeat as many correction cycles as needed. Do not stop just because one correction reveals another problem. Treat **correction candidate** and **stable build** as complementary states: a correction candidate is a build being repaired and validated; a stable build is one that has passed all required blocking stability checks.
+>
+> Keep compilation, basic program operation, safety, authority boundaries, data integrity, research execution, evidence/provenance, and unauthorized-live-operation risks as **blocking requirements**. If one of these fails, keep correcting and validating.
+>
+> Calculation and domain-model problems such as trade math, commission/slippage calculations, indicators, market analysis, strategy mathematics, optimization calculations, performance statistics, and calibration can be **logged and flagged for later correction** when the underlying program remains stable and the defect does not violate a blocking safety, authority, integrity, or basic-function requirement. Never call a flagged calculation correct; record it clearly and carry it forward.
+>
+> After every correction cycle, use authoritative validation where available. Do not claim a build is stable without the required evidence. Once all blocking requirements pass, the build may be presented as a **stable program build with flagged domain issues**, if applicable, for manual review. Do not merge, promote, or release beyond the approval boundary without the required human approval.
+>
+> Never grant live-account, live-broker, automatic-order, credential, or application-setting authority through research, simulation, optimization, scrubbing, validation, or stabilization.
