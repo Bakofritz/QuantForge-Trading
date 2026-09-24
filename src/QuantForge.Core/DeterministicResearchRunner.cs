@@ -36,13 +36,23 @@ public static class DeterministicResearchRunner
         var events = ValidateAndOrderEvents(request.MarketEvents);
 
         var fills = new List<SimulationFill>(request.Intents.Count);
-        foreach (var intent in request.Intents)
+        var nextEventIndex = 0;
+        var orderedIntents = request.Intents
+            .Select((intent, index) => (intent, index))
+            .OrderBy(x => x.intent.SignalTime)
+            .ThenBy(x => x.intent.EarliestFillTime)
+            .ThenBy(x => x.index)
+            .ToArray();
+
+        foreach (var item in orderedIntents)
         {
+            var intent = item.intent;
             var found = false;
             SimulationFill fill = default;
 
-            foreach (var market in events)
+            for (var eventIndex = nextEventIndex; eventIndex < events.Count; eventIndex++)
             {
+                var market = events[eventIndex];
                 if (market.Timestamp >= intent.EarliestFillTime)
                 {
                     fill = DeterministicFillModel.FillAtNextEligibleEvent(
@@ -51,6 +61,7 @@ public static class DeterministicResearchRunner
                         request.CommissionPerUnit,
                         request.SlippagePerUnit);
                     found = true;
+                    nextEventIndex = eventIndex + 1;
                     break;
                 }
             }
@@ -59,7 +70,7 @@ public static class DeterministicResearchRunner
             {
                 return DataBlockedReport(
                     request.Job.Identity,
-                    $"No eligible market event exists at or after {intent.EarliestFillTime:O}.");
+                    $"No eligible market event exists at or after {intent.EarliestFillTime:O} after prior execution events.");
             }
 
             fills.Add(fill);
@@ -69,12 +80,17 @@ public static class DeterministicResearchRunner
             request.Intents[0].LedgerNamespace,
             request.StartingCash);
 
+        var evidence = ResearchEvidence.CreateRoot(request.Job.Identity);
+        long evidenceSequence = 0;
+
         foreach (var fill in fills
             .Select((fill, index) => (fill, index))
             .OrderBy(x => x.fill.FillTime)
             .ThenBy(x => x.index))
         {
             account.ApplyFill(fill.fill);
+            evidenceSequence++;
+            evidence = ResearchEvidence.AppendFill(evidence, evidenceSequence, fill.fill);
         }
 
         var finalSnapshot = account.Snapshot(events[^1].Close);
@@ -88,7 +104,8 @@ public static class DeterministicResearchRunner
             request.Job.Identity.ParameterSetFingerprint,
             request.Job.Identity.TemporalPartitionId,
             null,
-            finalSnapshot);
+            finalSnapshot,
+            evidence);
 
         ResearchReportRules.Validate(report);
         return report;
@@ -185,6 +202,7 @@ public static class DeterministicResearchRunner
             identity.ParameterSetFingerprint,
             identity.TemporalPartitionId,
             reason,
+            null,
             null);
 
         ResearchReportRules.Validate(report);
@@ -204,6 +222,7 @@ public static class DeterministicResearchRunner
             identity.ParameterSetFingerprint,
             identity.TemporalPartitionId,
             reason,
+            null,
             null);
 
         ResearchReportRules.Validate(report);
