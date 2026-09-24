@@ -70,8 +70,8 @@ This repository is maintained as a cumulative master build. Iterations are incre
 - No live broker, live-account trading, automatic order submission, or application-setting mutation was introduced.
 
 ### v26.47 validation
-- Source and repository integrity review: completed before modification.
-- Native restore/build/test/static validation: pending GitHub Actions result for the v26.47 commit.
+- Source and repository integrity review: completed before modification; final branch comparison is 4 commits ahead of the v26.46 baseline with no unrelated file/folder changes.
+- Native restore/build/test/static validation: passed in GitHub Actions run 36065367505 on final v26.47 commit 354d04f8486af1953e9f914e3bbe19fefe8f881c.
 - Local native compilation is not claimed.
 - This iteration does not add Android/Windows UI or platform publishing.
 - No trading performance claim is made by the deterministic runner tests; their assertions validate engine mechanics only.
