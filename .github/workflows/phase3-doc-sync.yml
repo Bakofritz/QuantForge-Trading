@@ -1,0 +1,91 @@
+name: Phase 3 Documentation Sync
+
+on:
+  push:
+    branches:
+      - master/v28.00-phase3-research-workflow
+
+permissions:
+  contents: write
+
+jobs:
+  append-phase3-docs:
+    if: github.event.head_commit.message == 'v28.06: synchronize phase 3 cumulative documentation'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out Phase 3 branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Append cumulative Phase 3 closeout records
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          records = {
+              "docs/MASTER_BUILD.md": r'''## v28.06 — Phase 3 Research Workflow Closeout
+
+- Active phase: **Phase 3 — Research workflow completion**.
+- Validated Phase 2/main baseline: merge commit `a0ff34925d2ee48a8de83c22b53519e43f167e63`.
+- Phase 3 branch: `master/v28.00-phase3-research-workflow`.
+- Implemented across v28.00-v28.05: reliability-gated research admission; explicit unresolved-gap/conflicting-overlap blocking; isolated optimization variant planning; causal multi-timeframe closed-bar/information-availability validation; deterministic workflow summaries and Markdown export; publication binding of complete results to strategy provenance, execution evidence, and matching data reliability; consolidated Phase 3 exit-contract coverage.
+- Blocking criteria validated: research data lineage remains fingerprint-bound; missing live-benchmark comparison and unresolved data defects cannot silently become performance evidence; optimization variants retain unique reproducibility identity and ledger namespaces; higher-timeframe information must be closed and available at decision time; unsafe order/live/settings authority remains fail-closed; blocked/invalid jobs contain no simulated account state or execution evidence; publishable results require complete provenance and reliability identity.
+- Authoritative Phase 3 CI checkpoints: v28.00 run `36085788992` SUCCESS; v28.01 run `36085885453` SUCCESS; v28.02 run `36086003716` SUCCESS; v28.03 run `36086120712` SUCCESS; v28.04 run `36086183938` SUCCESS; v28.05 exit-contract run `36086318725` SUCCESS.
+- Phase 3 engineering and blocking exit-contract implementation: **100%** for the approved research-workflow scope. This is not a claim that Product/UI, production-release hardening, or separately governed live-account capability is complete.
+- Overall usable research platform estimate: **99%**. Full end-to-end QuantForge implementation estimate: **94%**; Phase 4 Product/UI integration and later hardening remain.
+- Non-blocking domain issues carried forward: no new calculation defect was established by the Phase 3 blocking-contract suite; real strategy performance, commissions/slippage calibration, indicator mathematics, and market-model calibration remain subject to later domain validation with representative data.
+- Live environment: **disabled and separately governed**. Phase 3 introduced no broker credentials, live order route, live-account authorization, or application-setting mutation authority.
+- Superseding roadmap status: Phase 1 COMPLETE; Phase 2 COMPLETE and merged to `main`; Phase 3 COMPLETE at engineering/exit-contract level pending final branch closeout/merge approval; Phase 4 remains PLANNED and requires transition approval.
+- Next action: remove the one-time documentation-sync workflow, run the final authoritative quality gate, package the exact closeout artifact, open the Phase 3 pull request, and stop before merge/Phase 4 transition for the applicable human approval.
+''',
+              "docs/MELLON_MASTER_PROMPT.md": r'''## v28.06 — Phase 3 validated-state addendum
+
+Phase 3 research-workflow engineering is complete at the approved service/core scope after the validated v28.05 exit-contract run. Mellon must preserve the following current-state facts when continuing:
+
+- Phase 2 is merged to protected `main` at merge commit `a0ff34925d2ee48a8de83c22b53519e43f167e63`.
+- Active Phase 3 branch is `master/v28.00-phase3-research-workflow`.
+- Research execution is reliability-gated: unresolved gaps, conflicting overlaps, or absence of a live benchmark comparison are explicit blocking conditions rather than inferred or silently filled data.
+- Optimization variants require unique reproducibility identity and independent ledger namespaces.
+- Multi-timeframe research may use only bars/information closed and available at the decision time; future or unfinished higher-timeframe information is invalid.
+- Consolidated workflow reports carry deterministic fingerprints, terminal state, reproducibility identity, evidence identity, and data-reliability information and can be exported to human-readable Markdown.
+- Publishable complete results must bind the research report to admitted strategy provenance, execution evidence, and the matching reliability-assessed dataset.
+- Read-only research remains unable to acquire live-account, order-submission, or application-setting authority.
+- Phase 3 exit-contract CI run `36086318725` passed static validation, restore/build, tests, complete-source packaging, and artifact upload.
+- Before Phase 4 begins, Mellon must complete Phase 3 documentation/artifact/PR closeout and observe the human transition/merge approval boundary. Do not infer Phase 4 or live authority from Phase 3 success.
+''',
+              "docs/USER_MANUAL.md": r'''## v28.06 — Phase 3 research workflow behavior
+
+QuantForge now has a validated core workflow for coordinating research and optimization runs before Product/UI integration.
+
+- **Data reliability is part of admission.** A dataset carries a reliability score and records whether it was compared with a live benchmark. If the dataset has unresolved gaps, conflicting overlapping records, or lacks the required benchmark comparison, the research job is blocked rather than guessing what the missing data should have been.
+- **Optimization variants remain isolated.** Parameter variants must have unique research identities and separate ledger namespaces so one variant cannot reuse another variant's simulated account state.
+- **Multi-timeframe research is causal.** A higher-timeframe bar must be closed, and its information must actually have been available at the decision time. An unfinished future bar cannot be used to improve an earlier decision.
+- **Results are reproducible and shareable.** Completed workflow results can be summarized with a deterministic workflow fingerprint and exported as a readable Markdown report containing run status, reproducibility identity, evidence identity, and data-reliability information.
+- **Publication is stricter than execution.** A result can be treated as publishable research evidence only when it is complete and can be bound to the admitted strategy provenance, execution evidence, and the matching reliability-assessed dataset.
+- **Blocked and invalid runs do not become performance claims.** They contain an explicit reason and do not carry simulated account performance or execution evidence as though the run had completed normally.
+- **Live trading remains disabled.** These research and optimization capabilities do not submit live orders, change application settings, unlock broker credentials, or grant live-account authority.
+
+Phase 3 validates the research-service workflow. Windows/Android Product/UI integration is a later phase and should not be interpreted as complete merely because the Phase 3 core contracts pass.
+'''
+          }
+
+          for filename, addition in records.items():
+              path = Path(filename)
+              current = path.read_text(encoding="utf-8")
+              marker = addition.splitlines()[0]
+              if marker not in current:
+                  path.write_text(current.rstrip() + "\n\n" + addition.strip() + "\n", encoding="utf-8")
+          PY
+
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/MASTER_BUILD.md docs/MELLON_MASTER_PROMPT.md docs/USER_MANUAL.md
+          if git diff --cached --quiet; then
+            echo "Phase 3 documentation already synchronized."
+            exit 0
+          fi
+          git commit -m "docs: append phase 3 research workflow closeout"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
