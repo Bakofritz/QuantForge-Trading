@@ -44,8 +44,8 @@ public static class ReadOnlyResearchOrchestrator
                     id.DatasetFingerprint,
                     id.StrategyFingerprint,
                     id.ExecutionPolicyFingerprint,
-                    id.ParameterFingerprint,
-                    id.TemporalPartition,
+                    id.ParameterSetFingerprint,
+                    id.TemporalPartitionId,
                     $"Contained batch execution failure: {ex.Message}",
                     null,
                     null));
