@@ -27,3 +27,11 @@ jobs:
         run: dotnet build tests/QuantForge.Core.ArchitectureTests/QuantForge.Core.ArchitectureTests.csproj --configuration Release --no-restore
       - name: Test
         run: dotnet test tests/QuantForge.Core.ArchitectureTests/QuantForge.Core.ArchitectureTests.csproj --configuration Release --no-build
+      - name: Package complete source archive
+        run: zip -r "QuantForge-build-${GITHUB_SHA}.zip" . -x ".git/*" "**/bin/*" "**/obj/*"
+      - name: Upload complete source archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: QuantForge-complete-build-${{ github.sha }}
+          path: QuantForge-build-${{ github.sha }}.zip
+          if-no-files-found: error
