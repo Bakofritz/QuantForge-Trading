@@ -27,8 +27,6 @@ public sealed class DiagnosticJournal
 {
     public const int MaximumEvents = 2000;
     public const int MaximumFileBytes = 2 * 1024 * 1024;
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    { Converters = { new JsonStringEnumConverter() } };
     private readonly Channel<DiagnosticEvent> _queue = Channel.CreateBounded<DiagnosticEvent>(256);
     private readonly Stopwatch _clock = Stopwatch.StartNew();
     private readonly object _gate = new();
@@ -47,7 +45,7 @@ public sealed class DiagnosticJournal
             .Any(value => string.IsNullOrWhiteSpace(value) || value.Length > 128))
             throw new ArgumentException("Invalid diagnostic environment.");
         Directory.CreateDirectory(directory);
-        File.WriteAllText(Path.Combine(directory, "environment.json"), JsonSerializer.Serialize(environment, JsonOptions));
+        File.WriteAllText(Path.Combine(directory, "environment.json"), JsonSerializer.Serialize(environment, DiagnosticJsonContext.Default.DiagnosticEnvironment));
         _writer = Task.Run(async () =>
         {
             try
@@ -56,13 +54,13 @@ public sealed class DiagnosticJournal
                     FileAccess.Write, FileShare.Read, 4096, FileOptions.Asynchronous);
                 await foreach (var item in _queue.Reader.ReadAllAsync())
                 {
-                    var bytes = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(item, JsonOptions) + "\n");
+                    var bytes = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(item, DiagnosticJsonContext.Default.DiagnosticEvent) + "\n");
                     if (stream.Position + bytes.Length > MaximumFileBytes) { Interlocked.Increment(ref _dropped); continue; }
                     await stream.WriteAsync(bytes);
                     await stream.FlushAsync();
                 }
                 await File.WriteAllTextAsync(Path.Combine(directory, "status.json"),
-                    JsonSerializer.Serialize(new { DroppedEvents, StorageFailed }, JsonOptions));
+                    JsonSerializer.Serialize(new DiagnosticRecorderStatus(DroppedEvents, StorageFailed), DiagnosticJsonContext.Default.DiagnosticRecorderStatus));
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
             { _storageFailed = true; }
@@ -79,7 +77,7 @@ public sealed class DiagnosticJournal
         lock (_gate)
         {
             if (_stopped || _storageFailed) return false;
-            if (_count >= MaximumEvents - 1 && action != DiagnosticAction.SessionStopped)
+            if (_count >= MaximumEvents || (_count >= MaximumEvents - 1 && action != DiagnosticAction.SessionStopped))
             { Interlocked.Increment(ref _dropped); return false; }
             var item = new DiagnosticEvent(++_count, DateTimeOffset.UtcNow, _clock.ElapsedMilliseconds,
                 action, outcome, durationMilliseconds, GC.GetTotalMemory(false), userNote);
@@ -111,7 +109,7 @@ public sealed class DiagnosticJournal
         if (new FileInfo(eventPath).Length > MaximumFileBytes || new FileInfo(environmentPath).Length > 4096)
             throw new InvalidOperationException("Diagnostic files exceed export limits.");
         var eventBytes = await File.ReadAllBytesAsync(eventPath);
-        var environment = JsonSerializer.Deserialize<DiagnosticEnvironment>(await File.ReadAllTextAsync(environmentPath), JsonOptions)
+        var environment = JsonSerializer.Deserialize(await File.ReadAllTextAsync(environmentPath), DiagnosticJsonContext.Default.DiagnosticEnvironment)
             ?? throw new InvalidOperationException("Missing diagnostic environment.");
         var events = new List<DiagnosticEvent>();
         var incompleteLines = 0;
@@ -119,19 +117,15 @@ public sealed class DiagnosticJournal
         {
             try
             {
-                var item = JsonSerializer.Deserialize<DiagnosticEvent>(line, JsonOptions);
+                var item = JsonSerializer.Deserialize(line, DiagnosticJsonContext.Default.DiagnosticEvent);
                 if (item is null) incompleteLines++; else events.Add(item);
             }
             catch (JsonException) { incompleteLines++; }
         }
         var interrupted = !events.Any(item => item.Action == DiagnosticAction.SessionStopped);
-        var manifest = new
-        {
-            SchemaVersion = 1, Environment = environment, ExportedUtc = DateTimeOffset.UtcNow,
-            EventCount = events.Count, IncompleteLines = incompleteLines, Interrupted = interrupted,
-            EventSha256 = Convert.ToHexString(SHA256.HashData(eventBytes)),
-            Limitation = "App-only best-effort diagnostics. No guarantee of capturing fatal crashes, ANRs, final buffered events, CPU/battery or complete startup metrics. Not research evidence."
-        };
+        var manifest = new DiagnosticExportManifest(1, environment, DateTimeOffset.UtcNow,
+            events.Count, incompleteLines, interrupted, Convert.ToHexString(SHA256.HashData(eventBytes)),
+            "App-only best-effort diagnostics. No guarantee of capturing fatal crashes, ANRs, final buffered events, CPU/battery or complete startup metrics. Not research evidence.");
         using var archive = ZipFile.Open(destination, ZipArchiveMode.Create);
         async Task Add(string name, string text)
         {
@@ -139,7 +133,7 @@ public sealed class DiagnosticJournal
             await using var writer = new StreamWriter(stream);
             await writer.WriteAsync(text);
         }
-        await Add("manifest.json", JsonSerializer.Serialize(manifest, JsonOptions));
+        await Add("manifest.json", JsonSerializer.Serialize(manifest, DiagnosticJsonContext.Default.DiagnosticExportManifest));
         await Add("events.jsonl", Encoding.UTF8.GetString(eventBytes));
         var statusPath = Path.Combine(directory, "status.json");
         if (File.Exists(statusPath) && new FileInfo(statusPath).Length <= 4096)
@@ -149,3 +143,16 @@ public sealed class DiagnosticJournal
             "\nOnly manually entered problem notes may contain free text. No automatic upload. No trading authority.\n");
     }
 }
+
+
+internal sealed record DiagnosticRecorderStatus(long DroppedEvents, bool StorageFailed);
+internal sealed record DiagnosticExportManifest(int SchemaVersion, DiagnosticEnvironment Environment,
+    DateTimeOffset ExportedUtc, int EventCount, int IncompleteLines, bool Interrupted,
+    string EventSha256, string Limitation);
+
+[JsonSourceGenerationOptions(UseStringEnumConverter = true)]
+[JsonSerializable(typeof(DiagnosticEnvironment))]
+[JsonSerializable(typeof(DiagnosticEvent))]
+[JsonSerializable(typeof(DiagnosticRecorderStatus))]
+[JsonSerializable(typeof(DiagnosticExportManifest))]
+internal partial class DiagnosticJsonContext : JsonSerializerContext { }
