@@ -231,3 +231,85 @@ These are engineering planning estimates, not runtime certification.
 - Initial source inspection: completed.
 - Authoritative Phase 2 validation after the kickoff documentation change: pending.
 - This kickoff does not claim Phase 2 completion.
+
+
+## QuantForge production phase plan — cumulative roadmap
+This roadmap is appended to the master build record and is carried forward with every build. It defines the intended progression without treating future work as already implemented.
+
+### Phase 1 — Core integrity foundation
+**Status: COMPLETE**
+- Primary objective: establish a trustworthy research core.
+- Blocking focus: data integrity, core-function validity, intra-program communication, authority separation, evidence/provenance, and native build/test stability.
+- Exit criteria: authoritative build/test validation passes; core research paths communicate valid state/data; blocked/invalid states remain fail-closed; live authority remains separate.
+- Completed baseline: v26.50, authoritative GitHub Actions run 36076169410, 29 tests passed, 0 failed, 0 skipped, 0 warnings/errors.
+
+### Phase 2 — Integration hardening
+**Status: ACTIVE**
+- Primary objective: connect the validated core components without weakening their contracts.
+- Focus areas:
+  1. Data admission → research execution communication.
+  2. Strategy quarantine/scrubbing → feature selection → sanitized strategy admission.
+  3. Multi-strategy identity and isolated ledger propagation.
+  4. Read-only optimization/research across one or many scripts.
+  5. Provenance and evidence propagation across component boundaries.
+  6. Reliable component state/error communication and fail-closed handling.
+- Blocking exit criteria:
+  - no unauthorized authority crossing;
+  - admitted data remains traceable and integrity-bound;
+  - sanitized strategy identity remains linked to provenance;
+  - multi-strategy jobs preserve isolation;
+  - read-only research/optimization cannot submit orders or mutate application settings;
+  - blocked/invalid conditions remain explicit and cannot become performance evidence;
+  - authoritative native build/test/static/integration validation passes.
+- Current branch: master/v27.00-phase2-integration.
+- Current state: validation pending after Phase 2 kickoff documentation.
+
+### Phase 3 — Research workflow completion
+**Status: PLANNED — requires Phase 2 completion and user transition approval**
+- Primary objective: complete the end-to-end user-directed research workflow from import through audited research results.
+- Intended scope: workflow orchestration, research job lifecycle, batch/multi-script controls, optimization job management, reproducibility/reporting surfaces, and robust recovery of blocked/invalid jobs.
+- Blocking focus: end-to-end data lineage, authority continuity, reproducibility, job isolation, and safe failure recovery.
+- Exit criteria will be defined and recorded at Phase 3 kickoff from the validated Phase 2 baseline.
+
+### Phase 4 — Product/UI integration
+**Status: PLANNED — requires Phase 3 completion and user transition approval**
+- Primary objective: connect the validated research services to production application interfaces.
+- Intended scope: Android/Windows UI integration, user workflow state, import/audit controls, research dashboards, optimization controls, evidence/provenance presentation, and error/status communication.
+- Blocking focus: UI must not bypass service-layer authority, safety, data, provenance, or live-account restrictions.
+- Exit criteria will be defined at Phase 4 kickoff from the validated Phase 3 baseline.
+
+### Phase 5 — Production hardening and release readiness
+**Status: PLANNED — requires Phase 4 completion and user transition approval**
+- Primary objective: harden the integrated product for controlled release.
+- Intended scope: packaging, deployment validation, performance/resource testing, recovery behavior, compatibility, security review, documentation closeout, and release evidence.
+- Blocking focus: reproducible builds, security/safety boundaries, data integrity, failure recovery, and release traceability.
+- Exit criteria will be defined at Phase 5 kickoff from the validated Phase 4 baseline.
+
+### Phase 6 — Live-account readiness review
+**Status: PLANNED / SEPARATELY GOVERNED**
+- Primary objective: evaluate whether a separately authorized live-account capability should be designed and implemented.
+- Live-account authority is never inherited from research, simulation, optimization, scrubbing, replay, UI integration, or release completion.
+- Any live-account implementation requires a distinct scope proposal, explicit safety/authority design, dedicated validation, and the applicable human approvals before credentials, broker connectivity, or order submission are introduced.
+- Phase 6 is therefore not an automatic grant of live trading capability.
+
+### Phase progression rule
+- Mellon works continuously within the currently approved phase.
+- Ordinary correction-candidate iterations inside that phase do not require separate approval when already covered by the phase authorization.
+- Mellon must stop and request approval only for a material scope expansion or when the phase's blocking completion criteria have been met and transition to the next phase is ready for human approval.
+- Every build record must state the current phase, phase objective, phase completion criteria, current phase status, and the next phase.
+- Future phases are planning targets, not claims of implemented functionality.
+
+
+## Per-build phase-plan recording rule
+Starting with v27.00 and every subsequent build, the build record must append a concise phase-plan entry containing:
+- build/iteration identifier;
+- active phase;
+- phase objective;
+- work completed in that build;
+- blocking criteria being validated;
+- non-blocking domain issues carried forward;
+- validation state;
+- phase completion percentage;
+- overall QuantForge progress estimate;
+- next planned phase action.
+This is cumulative: update the running documents rather than creating a new phase-plan document for every iteration.
