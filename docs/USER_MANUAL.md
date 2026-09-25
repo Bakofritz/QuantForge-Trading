@@ -244,3 +244,12 @@ When the reliability layer reports an unresolved gap, conflicting overlap, missi
 Live trading remains disabled. The Windows and Android shells do not hold broker credentials, do not submit broker orders, do not grant live-account authority, and do not change protected application settings. Completing a research run, optimization, strategy audit, or platform build does not unlock live trading.
 
 Phase 4 establishes the functional application-shell and safety foundation. Final visual design refinement, distribution/store packaging, broader production hardening, and separately governed live-account readiness remain later work.
+
+
+## v30.00 — Reliability and release hardening
+
+If reliability information is absent, refers to another dataset, or contains duplicate assessments, the research interface keeps execution disabled. Reports remain readable. Ready-state scores come from the matching assessments; missing coverage must not look like a verified score.
+
+Source archives now include SOURCE_MANIFEST.json with the Git commit, source tree, and every source file's SHA-256. A companion .sha256 file checks the archive itself. These identify source bytes; they do not certify device behavior or trading profitability.
+
+The application is primarily C#/.NET 10 with Windows/Android .NET MAUI shells. The sunflower reference is the intended final interface. The present shell is basic; full charting, script translation, AI/scout/bot operation, and complete import-to-results device workflows are not all implemented. Live-account authority remains disabled.

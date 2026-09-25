@@ -27,13 +27,17 @@ jobs:
         run: dotnet build tests/QuantForge.Core.ArchitectureTests/QuantForge.Core.ArchitectureTests.csproj --configuration Release --no-restore
       - name: Test
         run: dotnet test tests/QuantForge.Core.ArchitectureTests/QuantForge.Core.ArchitectureTests.csproj --configuration Release --no-build
+      - name: Test deterministic source packaging
+        run: python3 -m unittest discover -s tools -p 'test_package_source.py'
       - name: Package complete source archive
-        run: zip -r "QuantForge-build-${GITHUB_SHA}.zip" . -x ".git/*" "**/bin/*" "**/obj/*"
+        run: python3 tools/package_source.py --output "QuantForge-build-${GITHUB_SHA}.zip"
       - name: Upload complete source archive
         uses: actions/upload-artifact@v4
         with:
           name: QuantForge-complete-build-${{ github.sha }}
-          path: QuantForge-build-${{ github.sha }}.zip
+          path: |
+            QuantForge-build-${{ github.sha }}.zip
+            QuantForge-build-${{ github.sha }}.zip.sha256
           if-no-files-found: error
 
   android-shell-build:
