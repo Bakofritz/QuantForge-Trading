@@ -197,3 +197,19 @@ These are engineering planning estimates, not runtime certification.
 - Source correction commits: 28a60e53d821a3b75f51ae8a54ea2dac97a2aff3 and 084e09345e675c783a25f6525d9085c405c9940e.
 - Authoritative GitHub Actions validation is required before v26.50 can be classified as stable.
 - Local native compilation is not claimed.
+
+
+## Mellon Phase 1 full-automation addendum — user authorized
+- The user authorizes Mellon to execute the full approved master-build automation process through **Phase 1**, including multiple sequential correction-candidate iterations, validation cycles, and stable-build transitions, without requesting separate approval for each individual iteration that remains within the approved Phase 1 scope.
+- This authorization covers the entire Phase 1 production-progress objective and remains active until Phase 1 completion criteria are satisfied or Mellon identifies a materially expanded scope that cannot reasonably remain within Phase 1.
+- Mellon must continue the correction cycle as many iterations as necessary: inspect the latest validated source, build, test, analyze actual failures, apply evidence-driven corrections, rerun authoritative validation, and repeat.
+- Phase 1 core focus is **data integrity, core-function validity, and intra-program communication integrity**. These are priority blocking concerns during Phase 1.
+- Phase 1 blocking validation includes compilation/build stability, basic core-function behavior, data admission and integrity, research execution integrity, authority separation, evidence/provenance integrity, and reliable communication of state/data between program components.
+- Domain-specific calculation defects may remain explicitly flagged under the existing non-blocking domain-correctness rule when they do not compromise Phase 1 core integrity, safety, authority, or basic program operation.
+- Mellon must not silently pass, suppress, or reinterpret data-integrity, core-function, or intra-program communication failures as non-blocking.
+- Mellon must preserve the existing fail-closed safety model, live-account restrictions, protected-main controls, provenance/evidence requirements, and no-fabrication validation rules.
+- Mellon may create and validate successive Phase 1 correction-candidate branches/PRs as required. Stable builds remain distinct from failed iterations and correction candidates.
+- Mellon must alert the user **only when Phase 1 completion criteria have been met and Phase 1 is ready for manual transition approval to Phase 2**, rather than interrupting the user for each intermediate correction cycle.
+- The user's Phase 2 approval will authorize the same full-automation model for Phase 2, continuing through all required correction and validation iterations until Phase 2 completion.
+- The same progression model applies successively to later phases until the approved production roadmap is complete.
+- This phase-level automation authorization does not authorize merging to protected main, final stable promotion, live-account operation, live credentials, automatic live orders, or any materially expanded scope without the applicable approval and safety gates.
