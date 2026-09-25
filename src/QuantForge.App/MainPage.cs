@@ -116,7 +116,7 @@ public sealed class MainPage : ContentPage
             cancellation.CancelAfter(TimeSpan.FromSeconds(30));
             var result = await ResearchManifestReader.InspectAsync(stream, cancellation.Token);
             cancellation.Token.ThrowIfCancellationRequested();
-            AppDiagnostics.Record(DiagnosticAction.ManifestInspection, result.Status == ManifestInspectionStatus.Inspected ? DiagnosticOutcome.Completed : DiagnosticOutcome.Invalid, actionClock.ElapsedMilliseconds);
+            AppDiagnostics.Record(DiagnosticAction.ManifestInspection, result.Status switch { ManifestInspectionStatus.Inspected => DiagnosticOutcome.Completed, ManifestInspectionStatus.Unavailable => DiagnosticOutcome.Unavailable, ManifestInspectionStatus.Cancelled => DiagnosticOutcome.Cancelled, _ => DiagnosticOutcome.Invalid }, actionClock.ElapsedMilliseconds);
             _manifestLabel.Text = result.Manifest is { } manifest
                 ? $"Manifest inspected | Dataset: {manifest.DatasetId} | Strategy: {manifest.StrategyId} | Source SHA-256: {result.SourceFingerprint}. Data and strategy remain unadmitted."
                 : $"Manifest inspection: {result.Status} | {result.DiagnosticCode}. No data admitted; choose a valid file to retry.";
@@ -168,7 +168,7 @@ public sealed class MainPage : ContentPage
             cancellation.CancelAfter(TimeSpan.FromSeconds(30));
             var result = await Task.Run(() => Nt8MinuteInspector.InspectAsync(stream, descriptor, cancellation.Token));
             cancellation.Token.ThrowIfCancellationRequested();
-            AppDiagnostics.Record(DiagnosticAction.DataInspection, result.Status == MarketDataInspectionStatus.Inspected ? DiagnosticOutcome.Completed : DiagnosticOutcome.Invalid, actionClock.ElapsedMilliseconds);
+            AppDiagnostics.Record(DiagnosticAction.DataInspection, result.Status switch { MarketDataInspectionStatus.Inspected => DiagnosticOutcome.Completed, MarketDataInspectionStatus.Unavailable => DiagnosticOutcome.Unavailable, MarketDataInspectionStatus.Cancelled => DiagnosticOutcome.Cancelled, _ => DiagnosticOutcome.Invalid }, actionClock.ElapsedMilliseconds);
             _inspectedData = result.Status == MarketDataInspectionStatus.Inspected ? result : null;
             _dataLabel.Text = result.Bars is { Count: > 0 } bars
                 ? $"Inspected {bars.Count} bars | Declared: {descriptor.Instrument}, {descriptor.PriceSeries} | UTC end stamps {bars[0].Timestamp:u} to {bars[^1].Timestamp:u} | Non-contiguous intervals: {result.NonContiguousIntervals} (not classified as missing data) | SHA-256: {result.SourceFingerprint}. Identity, session coverage and benchmark remain unverified; research disabled."
@@ -215,7 +215,7 @@ public sealed class MainPage : ContentPage
             var reference = await Task.Run(() => Nt8MinuteInspector.InspectAsync(stream, descriptor, cancellation.Token));
             var result = await Task.Run(() => MinuteSeriesComparison.Compare(primary, reference, cancellation.Token));
             cancellation.Token.ThrowIfCancellationRequested();
-            AppDiagnostics.Record(DiagnosticAction.SourceComparison, result.Status == MinuteComparisonStatus.Compared ? DiagnosticOutcome.Completed : DiagnosticOutcome.Invalid, actionClock.ElapsedMilliseconds);
+            AppDiagnostics.Record(DiagnosticAction.SourceComparison, result.Status switch { MinuteComparisonStatus.Compared => DiagnosticOutcome.Completed, MinuteComparisonStatus.Cancelled => DiagnosticOutcome.Cancelled, _ => DiagnosticOutcome.Invalid }, actionClock.ElapsedMilliseconds);
             _comparisonLabel.Text = result.Status == MinuteComparisonStatus.Compared
                 ? $"Source agreement: {result.MatchingBars} matching, {result.ConflictingBars} differing, {result.PrimaryOnlyBars} only in primary, {result.ReferenceOnlyBars} only in reference. Same source bytes: {result.SameSourceBytes}. Primary SHA-256: {result.PrimaryFingerprint} | Reference SHA-256: {result.ReferenceFingerprint}. Full observed ranges compared; neither source identity, session coverage nor independence is verified. Research remains disabled."
                 : $"Comparison unavailable: {result.DiagnosticCode}; reference inspection: {reference.DiagnosticCode}. Correct the reference and retry. Research remains disabled.";

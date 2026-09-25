@@ -42,9 +42,9 @@ internal sealed class DiagnosticPanel : ContentView
         _stop.Clicked += async (_, _) => await RunAsync(StopAsync);
         _mark.Clicked += (_, _) =>
         {
-            AppDiagnostics.Current?.Record(DiagnosticAction.ProblemMarked, userNote: _note.Text);
+            var queued = AppDiagnostics.Current?.Record(DiagnosticAction.ProblemMarked, userNote: _note.Text) == true;
             _note.Text = string.Empty;
-            _status.Text = "Problem marker recorded. Continue testing or export.";
+            _status.Text = queued ? "Problem marker queued locally. Continue testing or export." : "Marker could not be queued; recording is stopped, full or unavailable.";
         };
         _export.Clicked += async (_, _) => await RunAsync(ExportAsync);
         _clear.Clicked += async (_, _) => await RunAsync(ClearAsync);
