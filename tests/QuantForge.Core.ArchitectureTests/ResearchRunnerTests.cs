@@ -153,6 +153,60 @@ public class ResearchRunnerTests
         Assert.Contains("cannot sell more", report.BlockReason, StringComparison.OrdinalIgnoreCase);
     }
 
+
+    [Fact]
+    public void Runner_rejects_unadmitted_strategy_envelope_without_performance_state()
+    {
+        var request = CreateRequest(
+            new[] { new SimulationIntent("s1", "batch|s1|account", SimulationSide.Buy, SimulationIntentType.Market, 1m, At(10, 0), At(10, 1)) },
+            new[] { Event(1, 10, 1, 100m) });
+
+        request = request with { StrategyAdmission = Admission(StrategyAdmissionState.Quarantined) };
+        var report = DeterministicResearchRunner.Run(request);
+
+        Assert.Equal(ResearchResultStatus.Invalid, report.Status);
+        Assert.Null(report.Account);
+        Assert.Null(report.EvidenceTail);
+    }
+
+    [Fact]
+    public void Runner_rejects_admission_identity_mismatch_without_performance_state()
+    {
+        var request = CreateRequest(
+            new[] { new SimulationIntent("s1", "batch|s1|account", SimulationSide.Buy, SimulationIntentType.Market, 1m, At(10, 0), At(10, 1)) },
+            new[] { Event(1, 10, 1, 100m) });
+
+        request = request with { StrategyAdmission = Admission(StrategyAdmissionState.Admitted, "other-sha") };
+        var report = DeterministicResearchRunner.Run(request);
+
+        Assert.Equal(ResearchResultStatus.Invalid, report.Status);
+        Assert.Null(report.Account);
+        Assert.Null(report.EvidenceTail);
+        Assert.Contains("match", report.BlockReason, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Runner_accepts_matching_sanitized_strategy_admission()
+    {
+        var request = CreateRequest(
+            new[] { new SimulationIntent("s1", "batch|s1|account", SimulationSide.Buy, SimulationIntentType.Market, 1m, At(10, 0), At(10, 1)) },
+            new[] { Event(1, 10, 1, 100m) });
+
+        request = request with { StrategyAdmission = Admission(StrategyAdmissionState.Admitted, "strategy-sha") };
+        var report = DeterministicResearchRunner.Run(request);
+
+        Assert.Equal(ResearchResultStatus.Complete, report.Status);
+        Assert.NotNull(report.Account);
+    }
+
+    private static StrategyAdmissionEnvelope Admission(StrategyAdmissionState state, string fingerprint = "strategy-sha")
+        => new(
+            state,
+            new StrategyCapabilityManifest("s1", fingerprint, false, false, false, false, false, false, false),
+            new StrategyFeatureSelection(new[] { StrategyFeature.SignalGeneration }),
+            "quarantine-sha",
+            fingerprint);
+
     [Fact]
     public void Runner_applies_commission_and_slippage_deterministically()
     {
