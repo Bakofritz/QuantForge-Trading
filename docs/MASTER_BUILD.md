@@ -341,3 +341,18 @@ This is cumulative: update the running documents rather than creating a new phas
 - Overall QuantForge progress estimate: **approximately 79%**.
 - Next action: inspect the newest authoritative CI result, correct any exposed failures, then package and verify the exact validated commit archive. No merge to `main` or live authority is implied.
 
+
+
+## v27.11 — Phase 2 Exit-Contract Validation
+
+- Active phase: **Phase 2 — Integration hardening**.
+- Validated head: `bb25c93ded5aa53d38cca8d7c6b99434720fec4a`.
+- Authoritative CI: GitHub Actions run `36083935121` — **SUCCESS**. Static contract gate, restore, Release build, tests, complete-source packaging, and artifact upload all passed.
+- Stable artifact: `QuantForge-complete-build-15048e7edfe2fb7a18d8faca58c69459dcc98d3d`, artifact ID `10843232577`, SHA-256 `1b4a7fb441e50d2243570a4457ac869d80a1ec38e228bbed14bf11da25ba7681`.
+- Work completed across Phase 2: fail-closed strategy admission; sanitized fingerprint binding; admission-to-execution binding; read-only multi-strategy orchestration; provenance/evidence binding; explicit component terminal/error state; per-strategy batch failure containment; consolidated exit-contract validation.
+- Blocking criteria validated: no authority crossing in the tested research path; admitted data/job identity traceability; sanitized strategy provenance; independent strategy execution; no order/settings/live-account authority from read-only orchestration; invalid/blocked results remain non-performance evidence; explicit terminal state/error propagation.
+- Failed correction history retained: v27.08 initial provenance-test fixture failure and v27.10 initial canonical-identity compile failure remain non-stable evidence; both were corrected and independently revalidated.
+- Phase 2 engineering implementation and blocking exit-contract validation: **100%** for the approved Phase 2 scope.
+- Overall usable research platform estimate: **99%**. Full end-to-end QuantForge implementation estimate: **90%**; later phases remain intentionally incomplete.
+- Live environment: disabled/separately governed. No broker credentials, live orders, or live-account authority were introduced.
+- Next action: documentation/release-evidence synchronization is this closeout iteration; after its own CI passes, stop before Phase 3 and request human transition approval.
