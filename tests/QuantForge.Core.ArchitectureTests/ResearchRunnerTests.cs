@@ -57,6 +57,27 @@ public class ResearchRunnerTests
     }
 
     [Fact]
+    public void Runner_reports_intent_strategy_mismatch_as_invalid_without_performance_state()
+    {
+        var request = CreateRequest(
+            new[]
+            {
+                new SimulationIntent(
+                    "unexpected", "batch|s1|account", SimulationSide.Buy,
+                    SimulationIntentType.Market, 1m,
+                    At(10, 0), At(10, 1))
+            },
+            new[] { Event(1, 10, 1, 100m) });
+
+        var report = DeterministicResearchRunner.Run(request);
+
+        Assert.Equal(ResearchResultStatus.Invalid, report.Status);
+        Assert.Null(report.Account);
+        Assert.Null(report.EvidenceTail);
+        Assert.Contains("strategy identity", report.BlockReason);
+    }
+
+    [Fact]
     public void Runner_rejects_invalid_admission_without_creating_performance_state()
     {
         var request = CreateRequest(
