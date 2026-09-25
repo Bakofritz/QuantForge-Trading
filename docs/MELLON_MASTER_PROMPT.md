@@ -157,3 +157,11 @@ Continue as far as the approved scope and stability permit. Correct directly exp
 - Phase 2 focus remains integration hardening. The research runner now contains malformed-data/execution failures as explicit `Invalid` reports and enforces ledger namespace strategy identity.
 - CI must be checked against the newest head before declaring stability.
 - The quality workflow now produces a complete source ZIP artifact for the exact validated commit; Mellon must download/materialize and verify that artifact before presenting the chat archive link.
+
+
+## v27.11 Phase 2 closeout state
+- Phase 2 implementation and blocking exit-contract suite reached 100% at validated source head `bb25c93ded5aa53d38cca8d7c6b99434720fec4a`.
+- Authoritative run `36083935121` completed successfully across static contracts, restore, build, tests, packaging, and artifact upload.
+- The validated Phase 2 chain covers strategy admission, sanitized identity binding, research execution, read-only multi-strategy orchestration, failure containment, provenance/evidence, and explicit terminal state/error communication.
+- Phase 3 remains unauthorized until Phase 2 documentation/release-evidence synchronization is itself green and the user approves the phase transition.
+- Do not merge PR #5 or start Phase 3 merely because the Phase 2 source suite is green.
