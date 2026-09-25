@@ -284,3 +284,8 @@ The report shows parsed bars, UTC range, original-byte SHA-256 and intervals tha
 The core reader's limit does not bound MAUI's native provider caching before OpenReadAsync. Parsing runs off the UI thread; provider handling and the 30-second read token remain cooperative. Native startup, provider caching and cancellation still require runtime validation. This build is not a usable Android release.
 
 APK delivery rule: only provide the user an APK once the complete agreed usable workflow has passed Android runtime validation, including import, supported strategy simulation, results/chart/ledger, recovery and documented safety limits. Compilation alone is insufficient. Source/review ZIP packages continue; no unfinished APK is included. Live-account authority remains disabled.
+
+
+## v30.04 — Cancel and retry inspection
+
+Cancel inspection requests cooperative cancellation for either file inspection. Leaving the page also requests cancellation. If a native picker is open, close or cancel that picker to return to the app. The app waits for the provider to return before enabling a new inspection; it never interprets cancellation as successful inspection or admission. Platform picker overlays, activity recreation, process termination and unresponsive providers still require native runtime testing. No hard deadline for external providers is promised.

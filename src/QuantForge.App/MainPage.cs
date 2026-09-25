@@ -13,6 +13,8 @@ public sealed class MainPage : ContentPage
     private readonly Picker _priceSeriesPicker = new() { Title = "Declared price series", ItemsSource = new[] { "Last", "Bid", "Ask" } };
     private readonly Button _inspectDataButton = new() { Text = "Inspect NT8 one-minute export (UTC)" };
     private readonly Label _dataLabel = new() { Text = "No market data inspected. Contract and price series must be declared; text rows cannot verify them." };
+    private readonly Button _cancelInspectionButton = new() { Text = "Cancel inspection", IsEnabled = false };
+    private CancellationTokenSource? _inspectionCancellation;
     private readonly ProductApplicationSession _session = new();
     private readonly Label _diagnosticLabel = new();
     private readonly Label _workflowLabel = new();
@@ -28,6 +30,7 @@ public sealed class MainPage : ContentPage
         _inspectManifestButton.Clicked += async (_, _) => await InspectManifestAsync();
 
         _inspectDataButton.Clicked += async (_, _) => await InspectDataAsync();
+        _cancelInspectionButton.Clicked += (_, _) => CancelInspection();
 
         ShowUnavailable("Awaiting validated research data", _session.DiagnosticCode);
 
@@ -55,6 +58,7 @@ public sealed class MainPage : ContentPage
                     _priceSeriesPicker,
                     _inspectDataButton,
                     _dataLabel,
+                    _cancelInspectionButton,
                     _diagnosticLabel,
                     _workflowLabel,
                     _sectionLabel,
@@ -78,8 +82,8 @@ public sealed class MainPage : ContentPage
 
     private async Task InspectManifestAsync()
     {
-        _inspectManifestButton.IsEnabled = false;
-        _inspectDataButton.IsEnabled = false;
+        if (_inspectionCancellation is not null) return;
+        using var cancellation = BeginInspection();
         _manifestLabel.Text = "Manifest inspection pending. No data admitted.";
         try
         {
@@ -89,9 +93,12 @@ public sealed class MainPage : ContentPage
                 _manifestLabel.Text = "Manifest selection cancelled. No data admitted.";
                 return;
             }
+            cancellation.Token.ThrowIfCancellationRequested();
             using var stream = await file.OpenReadAsync();
-            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-            var result = await ResearchManifestReader.InspectAsync(stream, timeout.Token);
+            cancellation.Token.ThrowIfCancellationRequested();
+            cancellation.CancelAfter(TimeSpan.FromSeconds(30));
+            var result = await ResearchManifestReader.InspectAsync(stream, cancellation.Token);
+            cancellation.Token.ThrowIfCancellationRequested();
             _manifestLabel.Text = result.Manifest is { } manifest
                 ? $"Manifest inspected | Dataset: {manifest.DatasetId} | Strategy: {manifest.StrategyId} | Source SHA-256: {result.SourceFingerprint}. Data and strategy remain unadmitted."
                 : $"Manifest inspection: {result.Status} | {result.DiagnosticCode}. No data admitted; choose a valid file to retry.";
@@ -108,13 +115,13 @@ public sealed class MainPage : ContentPage
         }
         finally
         {
-            _inspectManifestButton.IsEnabled = true;
-            _inspectDataButton.IsEnabled = true;
+            EndInspection();
         }
     }
 
     private async Task InspectDataAsync()
     {
+        if (_inspectionCancellation is not null) return;
         _dataLabel.Text = "Market-data inspection pending. Research remains disabled.";
         if (string.IsNullOrWhiteSpace(_instrumentEntry.Text) || _priceSeriesPicker.SelectedIndex < 0)
         {
@@ -122,8 +129,7 @@ public sealed class MainPage : ContentPage
             return;
         }
         var descriptor = new Nt8MinuteDescriptor(_instrumentEntry.Text, (MarketPriceSeries)_priceSeriesPicker.SelectedIndex);
-        _inspectDataButton.IsEnabled = _inspectManifestButton.IsEnabled = false;
-        _instrumentEntry.IsEnabled = _priceSeriesPicker.IsEnabled = false;
+        using var cancellation = BeginInspection();
         try
         {
             var file = await FilePicker.Default.PickAsync(new PickOptions { PickerTitle = "Choose UTC NT8 one-minute text export (up to 8 MiB)" });
@@ -132,9 +138,12 @@ public sealed class MainPage : ContentPage
                 _dataLabel.Text = "Market-data selection cancelled. No data admitted.";
                 return;
             }
+            cancellation.Token.ThrowIfCancellationRequested();
             using var stream = await file.OpenReadAsync();
-            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-            var result = await Task.Run(() => Nt8MinuteInspector.InspectAsync(stream, descriptor, timeout.Token));
+            cancellation.Token.ThrowIfCancellationRequested();
+            cancellation.CancelAfter(TimeSpan.FromSeconds(30));
+            var result = await Task.Run(() => Nt8MinuteInspector.InspectAsync(stream, descriptor, cancellation.Token));
+            cancellation.Token.ThrowIfCancellationRequested();
             _dataLabel.Text = result.Bars is { Count: > 0 } bars
                 ? $"Inspected {bars.Count} bars | Declared: {descriptor.Instrument}, {descriptor.PriceSeries} | UTC end stamps {bars[0].Timestamp:u} to {bars[^1].Timestamp:u} | Non-contiguous intervals: {result.NonContiguousIntervals} (not classified as missing data) | SHA-256: {result.SourceFingerprint}. Identity, session coverage and benchmark remain unverified; research disabled."
                 : $"Inspection: {result.Status} | {result.DiagnosticCode} | line {result.ErrorLine}. No data admitted; retry with a supported export.";
@@ -144,9 +153,40 @@ public sealed class MainPage : ContentPage
         { _dataLabel.Text = "Market-data provider unavailable. No data admitted; retry selection."; }
         finally
         {
-            _inspectDataButton.IsEnabled = _inspectManifestButton.IsEnabled = true;
-            _instrumentEntry.IsEnabled = _priceSeriesPicker.IsEnabled = true;
+            EndInspection();
         }
+    }
+
+    private CancellationTokenSource BeginInspection()
+    {
+        _inspectionCancellation = new CancellationTokenSource();
+        _inspectDataButton.IsEnabled = _inspectManifestButton.IsEnabled = false;
+        _instrumentEntry.IsEnabled = _priceSeriesPicker.IsEnabled = false;
+        _cancelInspectionButton.IsEnabled = true;
+        return _inspectionCancellation;
+    }
+
+    private void EndInspection()
+    {
+        _inspectionCancellation = null;
+        _inspectDataButton.IsEnabled = _inspectManifestButton.IsEnabled = true;
+        _instrumentEntry.IsEnabled = _priceSeriesPicker.IsEnabled = true;
+        _cancelInspectionButton.IsEnabled = false;
+    }
+
+    private void CancelInspection()
+    {
+        if (_inspectionCancellation is null) return;
+        _inspectionCancellation.Cancel();
+        _cancelInspectionButton.IsEnabled = false;
+        _manifestLabel.Text = "Inspection cancellation requested. Waiting for the file provider to return; no data admitted.";
+        _dataLabel.Text = "Inspection cancellation requested. Waiting for the file provider to return; no data admitted.";
+    }
+
+    protected override void OnDisappearing()
+    {
+        CancelInspection();
+        base.OnDisappearing();
     }
 
     public void ApplySummary(

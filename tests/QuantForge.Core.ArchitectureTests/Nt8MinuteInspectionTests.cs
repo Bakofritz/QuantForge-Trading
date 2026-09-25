@@ -144,6 +144,29 @@ public sealed class Nt8MinuteInspectionTests
         Assert.Equal(MarketDataInspectionStatus.Inspected, (await Nt8MinuteInspector.InspectAsync(stream, Descriptor)).Status);
     }
 
+    [Fact]
+    public async Task CancellationDuringReadCannotPublishCompletedBytes()
+    {
+        using var cancellation = new CancellationTokenSource();
+        using var stream = new CancellingStream(Encoding.UTF8.GetBytes(First), cancellation);
+        var result = await Nt8MinuteInspector.InspectAsync(stream, Descriptor, cancellation.Token);
+        Assert.Equal(MarketDataInspectionStatus.Cancelled, result.Status);
+        Assert.Null(result.Bars);
+        Assert.Null(result.SourceFingerprint);
+        Assert.True(stream.CanRead);
+    }
+
+    private sealed class CancellingStream(byte[] bytes, CancellationTokenSource cancellation) : MemoryStream(bytes)
+    {
+        public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            // Simulate a provider returning bytes even as cancellation is requested.
+            var count = await base.ReadAsync(buffer, CancellationToken.None);
+            cancellation.Cancel();
+            return count;
+        }
+    }
+
     private static async Task<Nt8MinuteInspectionResult> Inspect(string text)
     {
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(text));
