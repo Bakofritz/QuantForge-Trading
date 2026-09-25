@@ -180,3 +180,13 @@ Phase 3 research-workflow engineering is complete at the approved service/core s
 - Read-only research remains unable to acquire live-account, order-submission, or application-setting authority.
 - Phase 3 exit-contract CI run `36086318725` passed static validation, restore/build, tests, complete-source packaging, and artifact upload.
 - Before Phase 4 begins, Mellon must complete Phase 3 documentation/artifact/PR closeout and observe the human transition/merge approval boundary. Do not infer Phase 4 or live authority from Phase 3 success.
+
+## v29.05 — Phase 4 active-state addendum
+
+Phase 3 is merged and post-merge validated on protected `main` at `5c664b45d7fe7bdbc3cea1c617c2242c7439c307`. Phase 4 is authorized and active on `master/v29.00-phase4-product-ui`.
+
+Current Phase 4 validated presentation contracts include: read-only workflow summary state; strategy audit/quarantine state that cannot self-promote unsafe code; isolated optimization variant state; explicit data-reliability/admission state; and a fail-closed Pending/Running/Complete/DataBlocked/Invalid UI job lifecycle with explicit retry reset only for blocked/invalid jobs.
+
+Mellon must continue to treat the UI as a non-authoritative client of the validated research services. UI code may display and request research operations, but may not manufacture admission, provenance, evidence, reliability, live-account authority, order-submission authority, or application-setting authority.
+
+Phase 4 is not complete until Windows and Android application shells are connected to these safe contracts and those platform builds, service wiring, UI boundary regressions, and consolidated Phase 4 exit contracts are authoritatively validated. Live trading remains separately governed.

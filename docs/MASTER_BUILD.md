@@ -371,3 +371,19 @@ This is cumulative: update the running documents rather than creating a new phas
 - Live environment: **disabled and separately governed**. Phase 3 introduced no broker credentials, live order route, live-account authorization, or application-setting mutation authority.
 - Superseding roadmap status: Phase 1 COMPLETE; Phase 2 COMPLETE and merged to `main`; Phase 3 COMPLETE at engineering/exit-contract level pending final branch closeout/merge approval; Phase 4 remains PLANNED and requires transition approval.
 - Next action: remove the one-time documentation-sync workflow, run the final authoritative quality gate, package the exact closeout artifact, open the Phase 3 pull request, and stop before merge/Phase 4 transition for the applicable human approval.
+
+## v29.05 — Phase 4 Product/UI Integration Progress Checkpoint
+
+- Active phase: **Phase 4 — Product/UI integration**.
+- Validated Phase 3/main baseline: squash-merge commit `5c664b45d7fe7bdbc3cea1c617c2242c7439c307`; post-merge Quality Gate `36087253786` passed.
+- Phase 4 branch: `master/v29.00-phase4-product-ui`.
+- v29.00 added a read-only Product UI boundary that converts validated research workflow summaries into immutable UI state while hard-coding live-account, order-submission, and application-setting authority to false. Quality Gate `36087453493` passed.
+- v29.01 added strategy audit/quarantine presentation. Unsafe capabilities remain visible to the user but cannot be represented as research-admitted, and admitted strategies are revalidated through the existing admission pipeline. Quality Gate `36087589826` passed.
+- v29.02 added read-only optimization-plan presentation preserving unique job fingerprints, parameter identities, temporal partitions, and isolated ledger namespaces. Unsafe live-authority variants fail closed. Quality Gate `36087752854` passed.
+- v29.03 added explicit data-reliability presentation. Missing live benchmark comparison, unresolved gaps, and conflicting overlaps remain visibly blocked rather than being inferred or hidden. Quality Gate `36087833540` passed.
+- v29.04 added a fail-closed UI research-job lifecycle for Pending, Running, Complete, DataBlocked, and Invalid states. Only blocked/invalid jobs can be explicitly reset for retry; completed jobs cannot silently rerun. Quality Gate `36087927349` passed.
+- Blocking contracts preserved: UI state cannot create broker/live authority, submit orders, mutate application settings, self-promote quarantined strategies, hide data-integrity limitations, merge isolated optimization ledgers, or reinterpret blocked/invalid research as completed performance evidence.
+- Phase 4 engineering progress estimate: **approximately 40%**. Remaining blocking Phase 4 work includes actual Windows/Android application shells, service-to-view-model wiring, platform build validation, end-to-end UI boundary tests, and Phase 4 exit-contract validation.
+- Overall usable research platform remains approximately **99%**. Full end-to-end QuantForge implementation estimate: **approximately 95%**. These are engineering planning estimates, not production certification.
+- Live environment: **disabled and separately governed**. No broker credentials, live-order route, automatic live-order authority, or settings-mutation authority was introduced.
+- Next action: continue Phase 4 with platform-neutral application state/view-model contracts, then establish authoritative Windows/Android shell/build validation without weakening the service-layer safety boundaries.
