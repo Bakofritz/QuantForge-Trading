@@ -27,6 +27,8 @@ jobs:
         run: dotnet build tests/QuantForge.Core.ArchitectureTests/QuantForge.Core.ArchitectureTests.csproj --configuration Release --no-restore
       - name: Test
         run: dotnet test tests/QuantForge.Core.ArchitectureTests/QuantForge.Core.ArchitectureTests.csproj --configuration Release --no-build
+      - name: Test native JSON paths without reflection
+        run: dotnet test tests/QuantForge.Core.ArchitectureTests/QuantForge.Core.ArchitectureTests.csproj --configuration Release -p:JsonSerializerIsReflectionEnabledByDefault=false --filter "FullyQualifiedName~DiagnosticJournalTests|FullyQualifiedName~ResearchManifestReaderTests"
       - name: Test deterministic source packaging
         run: python3 -m unittest discover -s tools -p 'test_package_source.py'
       - name: Package complete source archive

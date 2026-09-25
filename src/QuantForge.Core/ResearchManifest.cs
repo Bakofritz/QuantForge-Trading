@@ -26,17 +26,10 @@ public static class ResearchManifestCodec
         "temporalPartitionId", "jobFingerprint", "authorityDomain"
     };
 
-    private static readonly JsonSerializerOptions Options = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = false,
-        DefaultIgnoreCondition = JsonIgnoreCondition.Never
-    };
-
     public static string SerializeCanonical(ResearchManifest manifest)
     {
         RequireComplete(manifest);
-        return JsonSerializer.Serialize(manifest, Options);
+        return JsonSerializer.Serialize(manifest, ResearchManifestJsonContext.Default.ResearchManifest);
     }
 
     public static ResearchManifest DeserializeAndValidate(string json)
@@ -59,7 +52,7 @@ public static class ResearchManifestCodec
         if (!seen.SetEquals(RequiredProperties))
             throw new InvalidOperationException("Every manifest property, including authority, must be explicit.");
 
-        var manifest = JsonSerializer.Deserialize<ResearchManifest>(json, Options)
+        var manifest = JsonSerializer.Deserialize(json, ResearchManifestJsonContext.Default.ResearchManifest)
             ?? throw new InvalidOperationException("Research manifest could not be decoded.");
 
         RequireComplete(manifest);
@@ -96,3 +89,9 @@ public static class ResearchManifestCodec
         AuthorityBoundary.EvaluateResearch(manifest.AuthorityDomain);
     }
 }
+
+
+[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+    DefaultIgnoreCondition = JsonIgnoreCondition.Never)]
+[JsonSerializable(typeof(ResearchManifest))]
+internal partial class ResearchManifestJsonContext : JsonSerializerContext { }
