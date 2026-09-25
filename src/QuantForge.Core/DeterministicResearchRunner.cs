@@ -32,7 +32,15 @@ public static class DeterministicResearchRunner
             return InvalidReport(request.Job.Identity, ex.Message);
         }
 
-        RequireIntentCompatibility(request);
+        try
+        {
+            RequireIntentCompatibility(request);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return InvalidReport(request.Job.Identity, ex.Message);
+        }
+
         var events = ValidateAndOrderEvents(request.MarketEvents);
 
         var fills = new List<SimulationFill>(request.Intents.Count);
