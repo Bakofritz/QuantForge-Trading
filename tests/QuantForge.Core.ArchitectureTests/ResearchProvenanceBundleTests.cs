@@ -36,7 +36,7 @@ public class ResearchProvenanceBundleTests
         var identity = new ResearchJobIdentity("data-sha", "strategy-sha", "exec-sha", "params-sha", "partition", "job-sha");
         var job = new ResearchJobSpec(AuthorityDomain.SimulatedAccount, data, strategy, identity, ExecutionTimingPolicy.NextBarOpen, false);
         var evidence = ResearchEvidence.CreateRoot(identity);
-        var account = new AccountSnapshot("batch|s1|account", 1000m, 0m, 0m, 1000m, 0m);
+        var account = new AccountSnapshot("batch|s1|account", 1000m, 1000m, new SimulatedPosition(0m, 0m), 100m, 0m, 0m, 1000m);
         var report = new ResearchReport("job-sha", ResearchResultStatus.Complete, "data-sha", "strategy-sha", "exec-sha", "params-sha", "partition", null, account, evidence);
         return (job, report);
     }
