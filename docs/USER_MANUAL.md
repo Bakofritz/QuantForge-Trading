@@ -165,3 +165,12 @@ v26.50 hardens research admission failure handling. When a simulation intent doe
 The invalid report contains no simulated account state and no execution-evidence tail. This keeps malformed research requests fail-closed while preserving the distinction between invalid admission and data-blocked execution.
 
 This is a program-stability correction. It does not mean all trading calculations, indicators, market analysis, optimization mathematics, or calibration have been certified correct.
+
+
+## v27.00 Phase 2 additions
+
+Phase 2 continues from the validated research core and focuses on integration hardening. Mellon will validate the interfaces between data admission, strategy quarantine/scrubbing, research admission, read-only multi-strategy optimization, provenance/evidence, and downstream research execution.
+
+Phase 2 remains research-only. Strategy scrubbing, optimization, replay, simulation, and validation do not grant live-account authority, order submission authority, credentials, or application-setting mutation authority.
+
+A Phase 2 build is not considered complete until its required integration and blocking safety/data-integrity tests pass in authoritative validation.
