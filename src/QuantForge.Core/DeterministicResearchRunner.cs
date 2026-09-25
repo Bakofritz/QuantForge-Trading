@@ -6,7 +6,8 @@ public sealed record ResearchRunRequest(
     IReadOnlyList<MarketEvent> MarketEvents,
     decimal StartingCash,
     decimal CommissionPerUnit,
-    decimal SlippagePerUnit);
+    decimal SlippagePerUnit,
+    StrategyAdmissionEnvelope? StrategyAdmission = null);
 
 public static class DeterministicResearchRunner
 {
@@ -25,6 +26,14 @@ public static class DeterministicResearchRunner
 
         try
         {
+            if (request.StrategyAdmission is { } admission)
+            {
+                var admitted = StrategyAdmissionPipeline.RequireAdmitted(admission);
+                if (admitted.StrategyId != request.Job.Strategy.StrategyId ||
+                    admitted.SourceFingerprint != request.Job.Strategy.SourceFingerprint)
+                    throw new InvalidOperationException("Research job strategy identity must match the sanitized admitted strategy.");
+            }
+
             ResearchJobRules.RequireRunnable(request.Job);
         }
         catch (InvalidOperationException ex)
