@@ -187,7 +187,12 @@ public class ResearchRunnerTests
             },
             new[] { Event(1, 10, 1, 100m) });
 
-        Assert.Throws<InvalidOperationException>(() => DeterministicResearchRunner.Run(request));
+        var report = DeterministicResearchRunner.Run(request);
+
+        Assert.Equal(ResearchResultStatus.Invalid, report.Status);
+        Assert.Null(report.Account);
+        Assert.Null(report.EvidenceTail);
+        Assert.Contains("Cannot sell more", report.BlockReason);
     }
 
     [Fact]
