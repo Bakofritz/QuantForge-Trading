@@ -9,6 +9,10 @@ public sealed class MainPage : ContentPage
 {
     private readonly Button _inspectManifestButton = new() { Text = "Inspect research manifest" };
     private readonly Label _manifestLabel = new() { Text = "No manifest inspected. Inspection does not admit data or enable research." };
+    private readonly Entry _instrumentEntry = new() { Placeholder = "Declared contract, e.g. MES 09-26", MaxLength = 64 };
+    private readonly Picker _priceSeriesPicker = new() { Title = "Declared price series", ItemsSource = new[] { "Last", "Bid", "Ask" } };
+    private readonly Button _inspectDataButton = new() { Text = "Inspect NT8 one-minute export (UTC)" };
+    private readonly Label _dataLabel = new() { Text = "No market data inspected. Contract and price series must be declared; text rows cannot verify them." };
     private readonly ProductApplicationSession _session = new();
     private readonly Label _diagnosticLabel = new();
     private readonly Label _workflowLabel = new();
@@ -22,6 +26,8 @@ public sealed class MainPage : ContentPage
     {
         Title = "QuantForge";
         _inspectManifestButton.Clicked += async (_, _) => await InspectManifestAsync();
+
+        _inspectDataButton.Clicked += async (_, _) => await InspectDataAsync();
 
         ShowUnavailable("Awaiting validated research data", _session.DiagnosticCode);
 
@@ -45,6 +51,10 @@ public sealed class MainPage : ContentPage
                     },
                     _inspectManifestButton,
                     _manifestLabel,
+                    _instrumentEntry,
+                    _priceSeriesPicker,
+                    _inspectDataButton,
+                    _dataLabel,
                     _diagnosticLabel,
                     _workflowLabel,
                     _sectionLabel,
@@ -69,6 +79,7 @@ public sealed class MainPage : ContentPage
     private async Task InspectManifestAsync()
     {
         _inspectManifestButton.IsEnabled = false;
+        _inspectDataButton.IsEnabled = false;
         _manifestLabel.Text = "Manifest inspection pending. No data admitted.";
         try
         {
@@ -98,6 +109,43 @@ public sealed class MainPage : ContentPage
         finally
         {
             _inspectManifestButton.IsEnabled = true;
+            _inspectDataButton.IsEnabled = true;
+        }
+    }
+
+    private async Task InspectDataAsync()
+    {
+        _dataLabel.Text = "Market-data inspection pending. Research remains disabled.";
+        if (string.IsNullOrWhiteSpace(_instrumentEntry.Text) || _priceSeriesPicker.SelectedIndex < 0)
+        {
+            _dataLabel.Text = "Declare the contract and Last/Bid/Ask series before choosing a UTC one-minute NT8 export.";
+            return;
+        }
+        var descriptor = new Nt8MinuteDescriptor(_instrumentEntry.Text, (MarketPriceSeries)_priceSeriesPicker.SelectedIndex);
+        _inspectDataButton.IsEnabled = _inspectManifestButton.IsEnabled = false;
+        _instrumentEntry.IsEnabled = _priceSeriesPicker.IsEnabled = false;
+        try
+        {
+            var file = await FilePicker.Default.PickAsync(new PickOptions { PickerTitle = "Choose UTC NT8 one-minute text export (up to 8 MiB)" });
+            if (file is null)
+            {
+                _dataLabel.Text = "Market-data selection cancelled. No data admitted.";
+                return;
+            }
+            using var stream = await file.OpenReadAsync();
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            var result = await Task.Run(() => Nt8MinuteInspector.InspectAsync(stream, descriptor, timeout.Token));
+            _dataLabel.Text = result.Bars is { Count: > 0 } bars
+                ? $"Inspected {bars.Count} bars | Declared: {descriptor.Instrument}, {descriptor.PriceSeries} | UTC end stamps {bars[0].Timestamp:u} to {bars[^1].Timestamp:u} | Non-contiguous intervals: {result.NonContiguousIntervals} (not classified as missing data) | SHA-256: {result.SourceFingerprint}. Identity, session coverage and benchmark remain unverified; research disabled."
+                : $"Inspection: {result.Status} | {result.DiagnosticCode} | line {result.ErrorLine}. No data admitted; retry with a supported export.";
+        }
+        catch (OperationCanceledException) { _dataLabel.Text = "Market-data selection cancelled. No data admitted."; }
+        catch (Exception error) when (error is not OutOfMemoryException)
+        { _dataLabel.Text = "Market-data provider unavailable. No data admitted; retry selection."; }
+        finally
+        {
+            _inspectDataButton.IsEnabled = _inspectManifestButton.IsEnabled = true;
+            _instrumentEntry.IsEnabled = _priceSeriesPicker.IsEnabled = true;
         }
     }
 

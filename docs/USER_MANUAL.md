@@ -273,3 +273,14 @@ Select **Inspect research manifest**, then choose a QuantForge version-1 JSON ma
 The manifest must contain every canonical property exactly once, including an explicit supported research authority. Missing/duplicate/unknown properties, unsupported versions, live or undefined authority, invalid UTF-8, incomplete/overlong identities and files over 64 KiB are rejected. A UTF-8 BOM is accepted and remains part of the source hash.
 
 Cancelled, unreadable and invalid inputs have distinct states; raw provider error details are not displayed. A failed attempt clears old inspection text and permits selecting another file. The selected source file is not modified, no stored setting is changed, and no path or script referenced inside the manifest is opened or executed. The native Android picker can create a temporary cached copy before returning the selection; the reader's 64 KiB budget does not bound that earlier platform copy. Reads use cooperative cancellation; a provider that ignores cancellation may still delay completion. Real device picker behavior remains to be tested beyond platform compilation.
+
+
+## v30.03 — Inspect an NT8 one-minute export
+
+Declare the exact contract (for example MES 09-26) and choose Last, Bid or Ask, then choose Inspect NT8 one-minute export (UTC). This reader accepts NT8 semicolon-separated UTF-8 text in yyyyMMdd HHmmss;open;high;low;close;volume format, with UTC end-of-bar timestamps aligned to the minute. Maximum 8 MiB, 100,000 bars and 256 characters per row. Day/tick exports and third-party local-time text are unsupported here. Keep MES/MNQ and Last/Bid/Ask files separate. The file's rows cannot verify your declared contract or series.
+
+The report shows parsed bars, UTC range, original-byte SHA-256 and intervals that are not adjacent minutes. A session closure is not automatically a data gap; no bars are invented or removed. Duplicate/out-of-order timestamps and malformed rows reject the entire file. Cancellation/provider errors leave no partial inspected dataset. Correct the input and retry. Inspection does not admit data or strategies and does not enable backtesting. A trusted identity, session/coverage assessment and independent benchmark are still needed.
+
+The core reader's limit does not bound MAUI's native provider caching before OpenReadAsync. Parsing runs off the UI thread; provider handling and the 30-second read token remain cooperative. Native startup, provider caching and cancellation still require runtime validation. This build is not a usable Android release.
+
+APK delivery rule: only provide the user an APK once the complete agreed usable workflow has passed Android runtime validation, including import, supported strategy simulation, results/chart/ledger, recovery and documented safety limits. Compilation alone is insufficient. Source/review ZIP packages continue; no unfinished APK is included. Live-account authority remains disabled.
