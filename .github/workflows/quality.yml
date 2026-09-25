@@ -35,3 +35,31 @@ jobs:
           name: QuantForge-complete-build-${{ github.sha }}
           path: QuantForge-build-${{ github.sha }}.zip
           if-no-files-found: error
+
+  android-shell-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - name: Install .NET MAUI Android workload
+        run: dotnet workload install maui-android
+      - name: Build Android research shell
+        run: dotnet build src/QuantForge.App/QuantForge.App.csproj -f net10.0-android --configuration Release -p:AndroidPackageFormats=apk
+
+  windows-shell-build:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - name: Install .NET MAUI Windows workload
+        run: dotnet workload install maui-windows
+      - name: Build Windows research shell
+        run: dotnet build src/QuantForge.App/QuantForge.App.csproj -f net10.0-windows10.0.19041.0 --configuration Release -p:WindowsPackageType=None
