@@ -53,12 +53,12 @@ public sealed class Phase4ExitContractTests
             CreateResearchSummary(blockingReliability: true),
             ProductWorkspaceSection.Reports);
 
-        var blocked = Assert.Single(state.Jobs.Where(x => x.State == ProductUiJobState.DataBlocked));
+        var blocked = Assert.Single(state.Jobs, x => x.State == ProductUiJobState.DataBlocked);
         Assert.True(blocked.CanRetry);
         Assert.Null(blocked.EvidenceFingerprint);
         Assert.False(string.IsNullOrWhiteSpace(blocked.Message));
 
-        var invalid = Assert.Single(state.Jobs.Where(x => x.State == ProductUiJobState.Invalid));
+        var invalid = Assert.Single(state.Jobs, x => x.State == ProductUiJobState.Invalid);
         Assert.True(invalid.CanRetry);
         Assert.Null(invalid.EvidenceFingerprint);
         Assert.False(string.IsNullOrWhiteSpace(invalid.Message));
