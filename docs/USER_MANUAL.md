@@ -264,3 +264,12 @@ When a summary is supplied on the UI thread, old displayed jobs are cleared befo
 QF-DATA-BLOCKED retains read-only visibility while blocking research execution. QF-PRESENTATION-READY means the presentation input passed validation; individual reports may still be Invalid or DataBlocked. It does not mean profitability, completed research, calibrated trade mathematics or live authority.
 
 Undefined authority values, unknown research modes and duplicate job identities are rejected. The session is a display lifecycle, not a substitute for the core data/strategy/evidence admission gates. Native build validation does not replace real Windows/Android runtime testing.
+
+
+## v30.02 — Inspect a research manifest
+
+Select **Inspect research manifest**, then choose a QuantForge version-1 JSON manifest. The app reads only your selected file through the native provider stream. It displays the dataset and strategy identifiers and a SHA-256 fingerprint of the exact file bytes when inspection succeeds. This is metadata inspection, not a market-data import, strategy approval, or backtest. Research commands are not enabled by it.
+
+The manifest must contain every canonical property exactly once, including an explicit supported research authority. Missing/duplicate/unknown properties, unsupported versions, live or undefined authority, invalid UTF-8, incomplete/overlong identities and files over 64 KiB are rejected. A UTF-8 BOM is accepted and remains part of the source hash.
+
+Cancelled, unreadable and invalid inputs have distinct states; raw provider error details are not displayed. A failed attempt clears old inspection text and permits selecting another file. No file is written, no stored setting is changed, and no referenced path or script is opened or executed. Reads use cooperative cancellation; a provider that ignores cancellation may still delay completion. Real device picker behavior remains to be tested beyond platform compilation.

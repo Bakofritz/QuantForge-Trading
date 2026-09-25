@@ -1,11 +1,14 @@
 using Microsoft.Maui;
 using Microsoft.Maui.Controls;
 using QuantForge.Core;
+using Microsoft.Maui.Storage;
 
 namespace QuantForge.App;
 
 public sealed class MainPage : ContentPage
 {
+    private readonly Button _inspectManifestButton = new() { Text = "Inspect research manifest" };
+    private readonly Label _manifestLabel = new() { Text = "No manifest inspected. Inspection does not admit data or enable research." };
     private readonly ProductApplicationSession _session = new();
     private readonly Label _diagnosticLabel = new();
     private readonly Label _workflowLabel = new();
@@ -18,6 +21,7 @@ public sealed class MainPage : ContentPage
     public MainPage()
     {
         Title = "QuantForge";
+        _inspectManifestButton.Clicked += async (_, _) => await InspectManifestAsync();
 
         ShowUnavailable("Awaiting validated research data", _session.DiagnosticCode);
 
@@ -39,6 +43,8 @@ public sealed class MainPage : ContentPage
                     {
                         Text = "Research workspace shell"
                     },
+                    _inspectManifestButton,
+                    _manifestLabel,
                     _diagnosticLabel,
                     _workflowLabel,
                     _sectionLabel,
@@ -58,6 +64,41 @@ public sealed class MainPage : ContentPage
                 }
             }
         };
+    }
+
+    private async Task InspectManifestAsync()
+    {
+        _inspectManifestButton.IsEnabled = false;
+        _manifestLabel.Text = "Manifest inspection pending. No data admitted.";
+        try
+        {
+            var file = await FilePicker.Default.PickAsync(new PickOptions { PickerTitle = "Choose a QuantForge research manifest" });
+            if (file is null)
+            {
+                _manifestLabel.Text = "Manifest selection cancelled. No data admitted.";
+                return;
+            }
+            using var stream = await file.OpenReadAsync();
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            var result = await ResearchManifestReader.InspectAsync(stream, timeout.Token);
+            _manifestLabel.Text = result.Manifest is { } manifest
+                ? $"Manifest inspected | Dataset: {manifest.DatasetId} | Strategy: {manifest.StrategyId} | Source SHA-256: {result.SourceFingerprint}. Data and strategy remain unadmitted."
+                : $"Manifest inspection: {result.Status} | {result.DiagnosticCode}. No data admitted; choose a valid file to retry.";
+        }
+        catch (OperationCanceledException)
+        {
+            _manifestLabel.Text = "Manifest selection cancelled. No data admitted.";
+        }
+        catch (Exception error) when (error is not OutOfMemoryException)
+        {
+            // Native picker/provider failures are contained at this UI boundary.
+            // Never display raw exception details or treat a failed read as admission.
+            _manifestLabel.Text = "Manifest file could not be inspected | QF-MANIFEST-UNAVAILABLE. No data admitted; retry selection.";
+        }
+        finally
+        {
+            _inspectManifestButton.IsEnabled = true;
+        }
     }
 
     public void ApplySummary(
