@@ -259,3 +259,13 @@ Aim for near-perfect desktop visual appearance and corresponding functional navi
 - Live environment remains research/simulation only, no broker credentials/connectivity/orders or protected-setting mutation. No phase transition, merge or final stable promotion authorized. Ordinary correction remains within existing Phase 5 approval; no new approval queue.
 - Packaging retains exact-source archive, checksums, cumulative docs, full Mellon rules, PDF manual, UI reference, validation evidence and handoff. Recent complete CI runs took roughly eight to ten minutes; no justified whole-phase ETA.
 - API implementation reference: https://learn.microsoft.com/en-us/dotnet/maui/platform-integration/storage/file-picker?tabs=android (read 2026-09-25). UI uses provider streams, not FullPath file opening.
+
+
+## v30.02a — Native picker resource-scope clarification
+
+- Follow-up source review of the pinned .NET MAUI 10.0.20 implementation found that Android FilePicker uses ACTION_OPEN_DOCUMENT and may call EnsurePhysicalPath/CacheContentFile, which copies selected content to the app cache before returning it. The core reader's byte budget starts after that operation.
+- Corrected the user manual's overly broad no-file-write statement: QuantForge does not modify the selected original, execute referenced scripts/paths, write application settings or grant admission, but native picker caching may occur. No new filesystem permission or live authority is introduced by this clarification.
+- Known release-readiness limitation: selected-file caching, oversized provider selections, cache cleanup and noncooperative provider cancellation require device-level validation and potentially a specialized picker adapter before claiming a resource-bounded end-to-end import path. The current 64 KiB/strict-schema guarantees apply to ResearchManifestReader only.
+- Reviewed exact upstream source: https://github.com/dotnet/maui/blob/10.0.20/src/Essentials/src/FilePicker/FilePicker.android.cs and https://github.com/dotnet/maui/blob/10.0.20/src/Essentials/src/FileSystem/FileSystemUtils.android.cs.
+- Baseline candidate: f5db33ede05e0e0a599da47d6842b365bc10849a. Its core build/test/package passed with 131 tests; platform checks were still running when this clarification was authored. This is an evidence-driven documentation correction, not a failed compiler/test revision or a stable-release promotion.
+- Phase 5 remains approximately 25% planning estimate. No additional feature progress is claimed for this clarification. Revalidate the exact new head and preserve all prior safety/approval/packaging rules.
