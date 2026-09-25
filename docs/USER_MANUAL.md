@@ -205,3 +205,17 @@ Phase 2's integrated research path has passed its consolidated exit-contract val
 The Phase 2 validation does **not** activate live trading. Live broker connections, credentials, real order submission, and research-driven application-setting changes remain outside this authority boundary.
 
 The validated v27.11 source head is `bb25c93ded5aa53d38cca8d7c6b99434720fec4a` with successful GitHub Actions run `36083935121`. Phase 3 begins only after the Phase 2 closeout documentation/release-evidence revision passes its own validation and the user approves the phase transition.
+
+## v28.06 — Phase 3 research workflow behavior
+
+QuantForge now has a validated core workflow for coordinating research and optimization runs before Product/UI integration.
+
+- **Data reliability is part of admission.** A dataset carries a reliability score and records whether it was compared with a live benchmark. If the dataset has unresolved gaps, conflicting overlapping records, or lacks the required benchmark comparison, the research job is blocked rather than guessing what the missing data should have been.
+- **Optimization variants remain isolated.** Parameter variants must have unique research identities and separate ledger namespaces so one variant cannot reuse another variant's simulated account state.
+- **Multi-timeframe research is causal.** A higher-timeframe bar must be closed, and its information must actually have been available at the decision time. An unfinished future bar cannot be used to improve an earlier decision.
+- **Results are reproducible and shareable.** Completed workflow results can be summarized with a deterministic workflow fingerprint and exported as a readable Markdown report containing run status, reproducibility identity, evidence identity, and data-reliability information.
+- **Publication is stricter than execution.** A result can be treated as publishable research evidence only when it is complete and can be bound to the admitted strategy provenance, execution evidence, and the matching reliability-assessed dataset.
+- **Blocked and invalid runs do not become performance claims.** They contain an explicit reason and do not carry simulated account performance or execution evidence as though the run had completed normally.
+- **Live trading remains disabled.** These research and optimization capabilities do not submit live orders, change application settings, unlock broker credentials, or grant live-account authority.
+
+Phase 3 validates the research-service workflow. Windows/Android Product/UI integration is a later phase and should not be interpreted as complete merely because the Phase 3 core contracts pass.
