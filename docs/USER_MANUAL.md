@@ -232,3 +232,15 @@ The Phase 4 interface layer now has tested rules for showing research informatio
 - Live trading remains disabled. The interface contracts do not submit broker orders, unlock broker credentials, change application settings, or grant live-account authority.
 
 These contracts are the safety-facing foundation for the later Windows and Android application screens. The actual platform application shells and platform build validation remain Phase 4 work in progress.
+
+## v29.10 — Windows and Android research application shell
+
+QuantForge now includes build-validated .NET MAUI research shells for Windows and Android. Both platforms use the same read-only Product/UI safety contracts rather than implementing separate trading authority.
+
+The application shell can display the research workflow identity, active workspace, data-reliability condition, whether research commands are currently available, and each research job's status. Completed jobs must carry execution evidence. Data Blocked and Invalid jobs keep their real reasons visible and are not displayed as successful performance.
+
+When the reliability layer reports an unresolved gap, conflicting overlap, missing benchmark comparison, or another blocking reliability condition, research execution remains disabled while the limitation can still be viewed. The interface does not fill missing market data by assumption.
+
+Live trading remains disabled. The Windows and Android shells do not hold broker credentials, do not submit broker orders, do not grant live-account authority, and do not change protected application settings. Completing a research run, optimization, strategy audit, or platform build does not unlock live trading.
+
+Phase 4 establishes the functional application-shell and safety foundation. Final visual design refinement, distribution/store packaging, broader production hardening, and separately governed live-account readiness remain later work.
