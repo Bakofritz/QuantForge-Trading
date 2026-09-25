@@ -6,6 +6,7 @@
     <RootNamespace>QuantForge.App</RootNamespace>
     <UseMaui>true</UseMaui>
     <SingleProject>true</SingleProject>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <ApplicationTitle>QuantForge</ApplicationTitle>
     <ApplicationId>com.quantforge.app</ApplicationId>
     <ApplicationDisplayVersion>0.29.8</ApplicationDisplayVersion>
@@ -23,6 +24,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.20" />
     <MauiIcon Include="Resources/AppIcon/appicon.svg" ForegroundFile="Resources/AppIcon/appiconfg.svg" Color="#1B1B1B" />
     <MauiSplashScreen Include="Resources/Splash/splash.svg" Color="#1B1B1B" BaseSize="128,128" />
   </ItemGroup>
