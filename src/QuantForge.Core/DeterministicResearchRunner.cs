@@ -41,7 +41,15 @@ public static class DeterministicResearchRunner
             return InvalidReport(request.Job.Identity, ex.Message);
         }
 
-        var events = ValidateAndOrderEvents(request.MarketEvents);
+        IReadOnlyList<MarketEvent> events;
+        try
+        {
+            events = ValidateAndOrderEvents(request.MarketEvents);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return InvalidReport(request.Job.Identity, ex.Message);
+        }
 
         var fills = new List<SimulationFill>(request.Intents.Count);
         var nextEventIndex = 0;
@@ -84,11 +92,19 @@ public static class DeterministicResearchRunner
             fills.Add(fill);
         }
 
-        var account = new SimulatedAccount(
-            request.Intents[0].LedgerNamespace,
-            request.StartingCash);
+        if (request.Intents[0].LedgerNamespace.Split('|') is not { Length: 3 } ledgerParts ||
+            !string.Equals(ledgerParts[1], request.Job.Strategy.StrategyId, StringComparison.Ordinal))
+            return InvalidReport(
+                request.Job.Identity,
+                "Simulation ledger namespace strategy identity does not match the admitted strategy.");
 
-        var evidence = ResearchEvidence.CreateRoot(request.Job.Identity);
+        try
+        {
+            var account = new SimulatedAccount(
+                request.Intents[0].LedgerNamespace,
+                request.StartingCash);
+
+            var evidence = ResearchEvidence.CreateRoot(request.Job.Identity);
         long evidenceSequence = 0;
 
         foreach (var fill in fills
@@ -101,9 +117,9 @@ public static class DeterministicResearchRunner
             evidence = ResearchEvidence.AppendFill(evidence, evidenceSequence, fill.fill);
         }
 
-        var finalSnapshot = account.Snapshot(events[^1].Close);
+            var finalSnapshot = account.Snapshot(events[^1].Close);
 
-        var report = new ResearchReport(
+            var report = new ResearchReport(
             request.Job.Identity.JobFingerprint,
             ResearchResultStatus.Complete,
             request.Job.Identity.DatasetFingerprint,
@@ -115,8 +131,13 @@ public static class DeterministicResearchRunner
             finalSnapshot,
             evidence);
 
-        ResearchReportRules.Validate(report);
-        return report;
+            ResearchReportRules.Validate(report);
+            return report;
+        }
+        catch (InvalidOperationException ex)
+        {
+            return InvalidReport(request.Job.Identity, ex.Message);
+        }
     }
 
     public static IReadOnlyList<ResearchReport> RunBatch(
