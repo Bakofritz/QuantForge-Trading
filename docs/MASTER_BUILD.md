@@ -327,3 +327,17 @@ This is cumulative: update the running documents rather than creating a new phas
 - Stable-build ZIP archives should be retained as distinct release evidence and should correspond to the exact validated commit being presented.
 - The ZIP export does not authorize a merge to protected main, stable promotion, live-account capability, or any other approval-gated action.
 - This rule applies to future builds from the current Mellon state forward and should be preserved in subsequent build-document updates.
+
+## v27.01 — Phase 2 Integration Correction Candidate
+
+- Active phase: **Phase 2 — Integration hardening**.
+- Branch: `master/v27.00-phase2-integration`.
+- Baseline: validated v26.50 Phase 1 foundation; Phase 2 remains unmerged and independently validated.
+- Work completed: hardened the deterministic research runner so malformed market-event input and simulation execution failures are converted into explicit `Invalid` research reports instead of escaping as uncontained runtime failures; enforced that the simulated ledger namespace strategy identity matches the admitted strategy; added regression coverage for ledger identity mismatch and execution-domain failure containment; added CI packaging of the complete source tree as a build artifact for the required chat ZIP export workflow.
+- Blocking criteria addressed: research execution containment, multi-strategy/ledger identity isolation, explicit invalid-result semantics, reproducible build packaging.
+- Non-blocking domain issues: no new domain-calculation defect was established by this iteration.
+- Validation: authoritative GitHub Actions run `36078006498` for the prior source correction was still in progress at the time of this record; the newest workflow commit will receive its own authoritative run. Therefore this iteration is **CORRECTION CANDIDATE / VALIDATION PENDING**, not stable.
+- Phase 2 progress estimate: **approximately 25%** (engineering estimate; integration scope remains substantial).
+- Overall QuantForge progress estimate: **approximately 79%**.
+- Next action: inspect the newest authoritative CI result, correct any exposed failures, then package and verify the exact validated commit archive. No merge to `main` or live authority is implied.
+
