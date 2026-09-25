@@ -187,3 +187,12 @@ The build documentation carries the authoritative engineering phase plan. In pla
 6. **Phase 6 — Live-account readiness review: SEPARATELY GOVERNED.** Research completion does not activate live trading. Any live-account capability requires a separate scope, safety design, validation, and explicit approvals.
 
 Every build should state which phase it is in, what that phase is trying to accomplish, what was completed, what remains, what is being tested, and the estimated progress toward the phase and overall product goal. Future phases are plans, not claims that those capabilities already exist.
+
+## v27.01 Phase 2 Build Note
+
+This iteration strengthens the research safety path. If a research run receives malformed market data or encounters a simulation execution problem, the runner now reports the run as **Invalid** instead of allowing the error to escape without a research result. The simulated ledger identity is also checked against the admitted strategy identity so one strategy cannot accidentally execute through another strategy's ledger namespace.
+
+The build process now packages the complete source tree through the quality gate so a verified archive can be attached to the Mellon chat report and matched to the exact GitHub commit. This archive is a companion to GitHub; GitHub remains the authoritative source.
+
+Phase 2 remains active. Live-account authority is still separate and is not granted by this work.
+
