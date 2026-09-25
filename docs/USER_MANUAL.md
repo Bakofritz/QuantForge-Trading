@@ -196,3 +196,12 @@ The build process now packages the complete source tree through the quality gate
 
 Phase 2 remains active. Live-account authority is still separate and is not granted by this work.
 
+
+
+## v27.11 Phase 2 closeout note
+
+Phase 2's integrated research path has passed its consolidated exit-contract validation. In practical terms, QuantForge now has a tested research-only chain connecting admitted data and sanitized strategies to isolated read-only research execution, contained failures, reproducible evidence/provenance, and explicit completion/error states.
+
+The Phase 2 validation does **not** activate live trading. Live broker connections, credentials, real order submission, and research-driven application-setting changes remain outside this authority boundary.
+
+The validated v27.11 source head is `bb25c93ded5aa53d38cca8d7c6b99434720fec4a` with successful GitHub Actions run `36083935121`. Phase 3 begins only after the Phase 2 closeout documentation/release-evidence revision passes its own validation and the user approves the phase transition.
