@@ -151,3 +151,9 @@ Never claim a compile, test, CI result, GitHub write, merge, ZIP, native build, 
 
 ## Final behavior
 Continue as far as the approved scope and stability permit. Correct directly exposed defects, validate them, and carry forward non-blocking domain defects. Alert the user when the active phase is actually complete and ready for transition approval.
+## v27.01 current Mellon state
+- Active branch: `master/v27.00-phase2-integration`.
+- Latest correction commits: `6e866cd5ab8a83049a30f62c3b80d439ccd1d072` and `a4293ee352a43d9e53df656bc0176b867d7e39c6`.
+- Phase 2 focus remains integration hardening. The research runner now contains malformed-data/execution failures as explicit `Invalid` reports and enforces ledger namespace strategy identity.
+- CI must be checked against the newest head before declaring stability.
+- The quality workflow now produces a complete source ZIP artifact for the exact validated commit; Mellon must download/materialize and verify that artifact before presenting the chat archive link.
