@@ -313,3 +313,17 @@ Starting with v27.00 and every subsequent build, the build record must append a 
 - overall QuantForge progress estimate;
 - next planned phase action.
 This is cumulative: update the running documents rather than creating a new phase-plan document for every iteration.
+
+
+## Mellon complete-build ZIP archive export rule — user authorized
+- In addition to the GitHub master-build process, every future QuantForge build iteration that is presented as a build artifact must also be exported as a **complete ZIP archive** in the chat when the exact build contents are available.
+- The ZIP is a companion archive, not a replacement for GitHub. GitHub remains the authoritative source for repository history, commits, branches, PRs, and validation.
+- The ZIP must contain the **entire build state being delivered**, including source, tests, documentation, phase/build records, user manual, configuration/build files, scripts/tools, release evidence applicable to that build, and other repository files required to reproduce or inspect the delivered build, subject to exclusion of transient/generated secrets, credentials, caches, and other unsafe or non-source material.
+- The archive must preserve the repository's relative directory structure.
+- Do not create a ZIP and call it complete unless the exact archive path and contents have been verified.
+- The build report must identify the ZIP filename/path, archive scope, corresponding GitHub commit SHA, branch, and validation state.
+- If an archive cannot be generated or its completeness cannot be verified in the current environment, Mellon must say so explicitly rather than claiming that the ZIP exists.
+- Failed and correction-candidate builds may also be archived when useful, but their filename and build record must clearly identify their non-stable status; a failed build must never be presented as a stable release.
+- Stable-build ZIP archives should be retained as distinct release evidence and should correspond to the exact validated commit being presented.
+- The ZIP export does not authorize a merge to protected main, stable promotion, live-account capability, or any other approval-gated action.
+- This rule applies to future builds from the current Mellon state forward and should be preserved in subsequent build-document updates.
