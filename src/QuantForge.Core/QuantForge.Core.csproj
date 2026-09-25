@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>QuantForge.Core</RootNamespace>
+    <AssemblyName>QuantForge.Core</AssemblyName>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,37 @@
+name: QuantForge Quality Gate
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  static-contract-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Python static repository gate
+        run: python3 tools/validate_repository.py
+
+  dotnet-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - name: Restore
+        run: dotnet restore tests/QuantForge.Core.ArchitectureTests/QuantForge.Core.ArchitectureTests.csproj
+      - name: Build
+        run: dotnet build tests/QuantForge.Core.ArchitectureTests/QuantForge.Core.ArchitectureTests.csproj --configuration Release --no-restore
+      - name: Test
+        run: dotnet test tests/QuantForge.Core.ArchitectureTests/QuantForge.Core.ArchitectureTests.csproj --configuration Release --no-build
+      - name: Package complete source archive
+        run: zip -r "QuantForge-build-${GITHUB_SHA}.zip" . -x ".git/*" "**/bin/*" "**/obj/*"
+      - name: Upload complete source archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: QuantForge-complete-build-${{ github.sha }}
+          path: QuantForge-build-${{ github.sha }}.zip
+          if-no-files-found: error
