@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.Maui;
 using Microsoft.Maui.Controls;
 using QuantForge.Core;
@@ -36,9 +37,10 @@ public sealed class MainPage : ContentPage
         _inspectDataButton.Clicked += async (_, _) => await InspectDataAsync();
         _cancelInspectionButton.Clicked += (_, _) => CancelInspection();
         _compareDataButton.Clicked += async (_, _) => await CompareDataAsync();
-        _clearDataButton.Clicked += (_, _) => ClearInspectedData();
+        _clearDataButton.Clicked += (_, _) => { AppDiagnostics.Record(DiagnosticAction.DataCleared); ClearInspectedData(); };
         _instrumentEntry.TextChanged += (_, _) => ClearInspectedData();
-        _priceSeriesPicker.SelectedIndexChanged += (_, _) => ClearInspectedData();
+        _instrumentEntry.Completed += (_, _) => AppDiagnostics.Record(DiagnosticAction.DeclarationChanged);
+        _priceSeriesPicker.SelectedIndexChanged += (_, _) => { AppDiagnostics.Record(DiagnosticAction.DeclarationChanged); ClearInspectedData(); };
 
         ShowUnavailable("Awaiting validated research data", _session.DiagnosticCode);
 
@@ -60,6 +62,7 @@ public sealed class MainPage : ContentPage
                     {
                         Text = "Research workspace shell"
                     },
+                    new DiagnosticPanel(),
                     _inspectManifestButton,
                     _manifestLabel,
                     _instrumentEntry,
@@ -95,12 +98,15 @@ public sealed class MainPage : ContentPage
     {
         if (_inspectionCancellation is not null) return;
         using var cancellation = BeginInspection();
+        var actionClock = Stopwatch.StartNew();
+        AppDiagnostics.Record(DiagnosticAction.ManifestInspection, DiagnosticOutcome.Started);
         _manifestLabel.Text = "Manifest inspection pending. No data admitted.";
         try
         {
             var file = await FilePicker.Default.PickAsync(new PickOptions { PickerTitle = "Choose a QuantForge research manifest" });
             if (file is null)
             {
+                AppDiagnostics.Record(DiagnosticAction.ManifestInspection, DiagnosticOutcome.Cancelled, actionClock.ElapsedMilliseconds);
                 _manifestLabel.Text = "Manifest selection cancelled. No data admitted.";
                 return;
             }
@@ -110,16 +116,19 @@ public sealed class MainPage : ContentPage
             cancellation.CancelAfter(TimeSpan.FromSeconds(30));
             var result = await ResearchManifestReader.InspectAsync(stream, cancellation.Token);
             cancellation.Token.ThrowIfCancellationRequested();
+            AppDiagnostics.Record(DiagnosticAction.ManifestInspection, result.Status == ManifestInspectionStatus.Inspected ? DiagnosticOutcome.Completed : DiagnosticOutcome.Invalid, actionClock.ElapsedMilliseconds);
             _manifestLabel.Text = result.Manifest is { } manifest
                 ? $"Manifest inspected | Dataset: {manifest.DatasetId} | Strategy: {manifest.StrategyId} | Source SHA-256: {result.SourceFingerprint}. Data and strategy remain unadmitted."
                 : $"Manifest inspection: {result.Status} | {result.DiagnosticCode}. No data admitted; choose a valid file to retry.";
         }
         catch (OperationCanceledException)
         {
+            AppDiagnostics.Record(DiagnosticAction.ManifestInspection, DiagnosticOutcome.Cancelled, actionClock.ElapsedMilliseconds);
             _manifestLabel.Text = "Manifest selection cancelled. No data admitted.";
         }
         catch (Exception error) when (error is not OutOfMemoryException)
         {
+            AppDiagnostics.Record(DiagnosticAction.ManifestInspection, DiagnosticOutcome.Unavailable, actionClock.ElapsedMilliseconds);
             // Native picker/provider failures are contained at this UI boundary.
             // Never display raw exception details or treat a failed read as admission.
             _manifestLabel.Text = "Manifest file could not be inspected | QF-MANIFEST-UNAVAILABLE. No data admitted; retry selection.";
@@ -142,11 +151,14 @@ public sealed class MainPage : ContentPage
         }
         var descriptor = new Nt8MinuteDescriptor(_instrumentEntry.Text, (MarketPriceSeries)_priceSeriesPicker.SelectedIndex);
         using var cancellation = BeginInspection();
+        var actionClock = Stopwatch.StartNew();
+        AppDiagnostics.Record(DiagnosticAction.DataInspection, DiagnosticOutcome.Started);
         try
         {
             var file = await FilePicker.Default.PickAsync(new PickOptions { PickerTitle = "Choose UTC NT8 one-minute text export (up to 8 MiB)" });
             if (file is null)
             {
+                AppDiagnostics.Record(DiagnosticAction.DataInspection, DiagnosticOutcome.Cancelled, actionClock.ElapsedMilliseconds);
                 _dataLabel.Text = "Market-data selection cancelled. No data admitted.";
                 return;
             }
@@ -156,14 +168,15 @@ public sealed class MainPage : ContentPage
             cancellation.CancelAfter(TimeSpan.FromSeconds(30));
             var result = await Task.Run(() => Nt8MinuteInspector.InspectAsync(stream, descriptor, cancellation.Token));
             cancellation.Token.ThrowIfCancellationRequested();
+            AppDiagnostics.Record(DiagnosticAction.DataInspection, result.Status == MarketDataInspectionStatus.Inspected ? DiagnosticOutcome.Completed : DiagnosticOutcome.Invalid, actionClock.ElapsedMilliseconds);
             _inspectedData = result.Status == MarketDataInspectionStatus.Inspected ? result : null;
             _dataLabel.Text = result.Bars is { Count: > 0 } bars
                 ? $"Inspected {bars.Count} bars | Declared: {descriptor.Instrument}, {descriptor.PriceSeries} | UTC end stamps {bars[0].Timestamp:u} to {bars[^1].Timestamp:u} | Non-contiguous intervals: {result.NonContiguousIntervals} (not classified as missing data) | SHA-256: {result.SourceFingerprint}. Identity, session coverage and benchmark remain unverified; research disabled."
                 : $"Inspection: {result.Status} | {result.DiagnosticCode} | line {result.ErrorLine}. No data admitted; retry with a supported export.";
         }
-        catch (OperationCanceledException) { _dataLabel.Text = "Market-data selection cancelled. No data admitted."; }
+        catch (OperationCanceledException) { AppDiagnostics.Record(DiagnosticAction.DataInspection, DiagnosticOutcome.Cancelled, actionClock.ElapsedMilliseconds); _dataLabel.Text = "Market-data selection cancelled. No data admitted."; }
         catch (Exception error) when (error is not OutOfMemoryException)
-        { _dataLabel.Text = "Market-data provider unavailable. No data admitted; retry selection."; }
+        { AppDiagnostics.Record(DiagnosticAction.DataInspection, DiagnosticOutcome.Unavailable, actionClock.ElapsedMilliseconds); _dataLabel.Text = "Market-data provider unavailable. No data admitted; retry selection."; }
         finally
         {
             EndInspection();
@@ -183,12 +196,15 @@ public sealed class MainPage : ContentPage
         if (_inspectionCancellation is not null || _inspectedData is not { DeclaredDescriptor: { } descriptor } primary) return;
         _comparisonLabel.Text = "Comparing declared sources. No reliability or research admission granted.";
         using var cancellation = BeginInspection();
+        var actionClock = Stopwatch.StartNew();
+        AppDiagnostics.Record(DiagnosticAction.SourceComparison, DiagnosticOutcome.Started);
         try
         {
             var file = await FilePicker.Default.PickAsync(new PickOptions
             { PickerTitle = $"Choose another UTC minute export declared as {descriptor.Instrument} {descriptor.PriceSeries}" });
             if (file is null)
             {
+                AppDiagnostics.Record(DiagnosticAction.SourceComparison, DiagnosticOutcome.Cancelled, actionClock.ElapsedMilliseconds);
                 _comparisonLabel.Text = "Reference selection cancelled. No comparison evidence created.";
                 return;
             }
@@ -199,13 +215,14 @@ public sealed class MainPage : ContentPage
             var reference = await Task.Run(() => Nt8MinuteInspector.InspectAsync(stream, descriptor, cancellation.Token));
             var result = await Task.Run(() => MinuteSeriesComparison.Compare(primary, reference, cancellation.Token));
             cancellation.Token.ThrowIfCancellationRequested();
+            AppDiagnostics.Record(DiagnosticAction.SourceComparison, result.Status == MinuteComparisonStatus.Compared ? DiagnosticOutcome.Completed : DiagnosticOutcome.Invalid, actionClock.ElapsedMilliseconds);
             _comparisonLabel.Text = result.Status == MinuteComparisonStatus.Compared
                 ? $"Source agreement: {result.MatchingBars} matching, {result.ConflictingBars} differing, {result.PrimaryOnlyBars} only in primary, {result.ReferenceOnlyBars} only in reference. Same source bytes: {result.SameSourceBytes}. Primary SHA-256: {result.PrimaryFingerprint} | Reference SHA-256: {result.ReferenceFingerprint}. Full observed ranges compared; neither source identity, session coverage nor independence is verified. Research remains disabled."
                 : $"Comparison unavailable: {result.DiagnosticCode}; reference inspection: {reference.DiagnosticCode}. Correct the reference and retry. Research remains disabled.";
         }
-        catch (OperationCanceledException) { _comparisonLabel.Text = "Comparison cancelled. No comparison evidence created."; }
+        catch (OperationCanceledException) { AppDiagnostics.Record(DiagnosticAction.SourceComparison, DiagnosticOutcome.Cancelled, actionClock.ElapsedMilliseconds); _comparisonLabel.Text = "Comparison cancelled. No comparison evidence created."; }
         catch (Exception error) when (error is not OutOfMemoryException)
-        { _comparisonLabel.Text = "Reference provider unavailable. No comparison evidence created; retry selection."; }
+        { AppDiagnostics.Record(DiagnosticAction.SourceComparison, DiagnosticOutcome.Unavailable, actionClock.ElapsedMilliseconds); _comparisonLabel.Text = "Reference provider unavailable. No comparison evidence created; retry selection."; }
         finally { EndInspection(); }
     }
 
@@ -231,6 +248,7 @@ public sealed class MainPage : ContentPage
     private void CancelInspection()
     {
         if (_inspectionCancellation is null) return;
+        AppDiagnostics.Record(DiagnosticAction.CancelRequested);
         _inspectionCancellation.Cancel();
         ClearInspectedData();
         _cancelInspectionButton.IsEnabled = false;
@@ -238,8 +256,15 @@ public sealed class MainPage : ContentPage
         _dataLabel.Text = "Inspection cancellation requested. Waiting for the file provider to return; no data admitted.";
     }
 
+    protected override void OnAppearing()
+    {
+        base.OnAppearing();
+        AppDiagnostics.Record(DiagnosticAction.PageAppeared);
+    }
+
     protected override void OnDisappearing()
     {
+        AppDiagnostics.Record(DiagnosticAction.PageDisappeared);
         CancelInspection();
         base.OnDisappearing();
     }

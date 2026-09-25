@@ -7,10 +7,11 @@
     <UseMaui>true</UseMaui>
     <SingleProject>true</SingleProject>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
-    <ApplicationTitle>QuantForge</ApplicationTitle>
-    <ApplicationId>com.quantforge.app</ApplicationId>
-    <ApplicationDisplayVersion>0.29.8</ApplicationDisplayVersion>
-    <ApplicationVersion>1</ApplicationVersion>
+    <ApplicationTitle>QuantForge Test</ApplicationTitle>
+    <ApplicationId>com.quantforge.diagnostic</ApplicationId>
+    <ApplicationDisplayVersion>0.30.6</ApplicationDisplayVersion>
+    <ApplicationVersion>3006</ApplicationVersion>
+    <InformationalVersion>0.30.6-diagnostic+$(SourceRevisionId)</InformationalVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">
