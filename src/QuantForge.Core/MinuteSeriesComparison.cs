@@ -71,7 +71,7 @@ public static class MinuteSeriesComparison
             inspection.DeclaredDescriptor is not { } descriptor ||
             string.IsNullOrWhiteSpace(descriptor.Instrument) || !Enum.IsDefined(descriptor.PriceSeries) ||
             inspection.SourceFingerprint is not { Length: 64 } fingerprint ||
-            fingerprint.Any(c => !(char.IsAsciiDigit(c) || c is >= 'A' and <= 'F')) ||
+            fingerprint.Any(c => !(char.IsAsciiDigit(c) || c is >= 'A' and <= 'F' or >= 'a' and <= 'f')) ||
             inspection.Bars is not { Count: > 0 and <= Nt8MinuteInspector.MaximumBars } bars)
             return false;
         for (var i = 0; i < bars.Count; i++)

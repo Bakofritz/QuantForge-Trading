@@ -534,3 +534,10 @@ Later research automation is not an implicit Phase 6 transition. Live-account au
 - Still incomplete: independent reference provenance, authenticated contract mapping, trading-session calendar/coverage classification, executable supported strategy adapter, actual app simulation/results/chart workflow, persistent recovery, Android/Windows runtime tests, delivery validation and visual target. Same-source agreement is never a shortcut around these gates. No APK sent; live-account authority disabled.
 - Next safe integration depends on trustworthy dataset/benchmark identity and runtime observations. Needed at the relevant admission/runtime stage: MES Minute Set, MNQ Separate Set, Replay Benchmark, Script Audit Set and Device Runtime Check. No request for large bulk data or contributor activation.
 - Approval: ordinary current-phase iteration authorized. No main merge, final stable promotion or Phase 6 transition authorized; no new approval queue.
+
+
+## v30.05a — Source hash casing correction
+
+- v30.05 0be0726da8b5ec2d01386cf7294d4e7fc786c507 is FAILED / NON-STABLE: push Quality Gate 36149201164 core job 108117888543 compiled but one of 177 tests failed; 176 passed, zero skipped. HashLetterCaseDoesNotManufactureSourceIndependence exposed inconsistent validation: comparison used case-insensitive digest equality, but its fingerprint validator accepted only uppercase hex. No green/stable claim applies to that failed candidate.
+- Corrected fingerprint validation to accept either hexadecimal letter case. Same-source detection remains case-insensitive. The existing failing regression is retained; no test weakened or removed and no admission or authority semantics changed. Ordinary automatic error correction remains authorized.
+- Commit: v30.05a: accept equivalent hexadecimal source fingerprints. Modifies MinuteSeriesComparison.cs and cumulative master build/Mellon handoff state. New exact-head CI required. Latest fully validated predecessor remains v30.04 4c9a192ac73c14f89795e536f5c542bc56208db4. Main still protected and unchanged; no APK delivery.

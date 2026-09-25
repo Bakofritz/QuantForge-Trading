@@ -295,3 +295,7 @@ Later research automation is not an implicit Phase 6 transition. Live-account au
 ## v30.05 current continuation state
 
 Active phase: Phase 5, branch master/v30.00-phase5-production-hardening, draft PR #9. v30.04 baseline 4c9a192ac73c14f89795e536f5c542bc56208db4 passed both authoritative gates. Recheck v30.05's own exact head and tests before calling it validated. The shell can inspect manifests/minute exports, cancel and clear retained data, and compare two declared sources; these actions do not admit data, verify benchmark independence, run strategies or grant authority. Never convert source agreement to a live reliability score. User APK delivery remains withheld until the complete agreed usable workflow is runtime-validated. Phase completion, main merge and stable release remain unapproved; ordinary Phase 5 continuation is authorized.
+
+
+### v30.05a correction state
+v30.05 0be0726da8b5ec2d01386cf7294d4e7fc786c507 failed its hash-casing regression (176 passed, one failed). Preserve this failed classification. v30.05a accepts equivalent uppercase/lowercase SHA-256 text and retains the regression. Check the new exact head's gates before calling it validated. v30.04 remains the last all-green predecessor until then; main remains the Phase 4 protected baseline.
