@@ -55,7 +55,7 @@ public sealed class ProductApplicationCoordinatorTests
         var error = Assert.Throws<InvalidOperationException>(() =>
             coordinator.ValidateCommand(
                 state,
-                new ProductUiCommand(ProductUiOperation.StartResearch, AuthorityDomain.Research)));
+                new ProductUiCommand(ProductUiOperation.StartResearch, AuthorityDomain.ReadOnlyResearch)));
 
         Assert.Contains("not available", error.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -71,13 +71,13 @@ public sealed class ProductApplicationCoordinatorTests
         var error = Assert.Throws<InvalidOperationException>(() =>
             coordinator.ValidateCommand(
                 state,
-                new ProductUiCommand(ProductUiOperation.StartResearch, AuthorityDomain.Research)));
+                new ProductUiCommand(ProductUiOperation.StartResearch, AuthorityDomain.ReadOnlyResearch)));
 
         Assert.Contains("data reliability", error.Message, StringComparison.OrdinalIgnoreCase);
 
         var viewDecision = coordinator.ValidateCommand(
             state,
-            new ProductUiCommand(ProductUiOperation.ViewResearchSummary, AuthorityDomain.Research));
+            new ProductUiCommand(ProductUiOperation.ViewResearchSummary, AuthorityDomain.ReadOnlyResearch));
 
         Assert.False(viewDecision.CanSubmitOrders);
         Assert.False(viewDecision.CanChangeApplicationSettings);
