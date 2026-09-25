@@ -150,7 +150,7 @@ public class ResearchRunnerTests
         Assert.Equal(ResearchResultStatus.Invalid, report.Status);
         Assert.Null(report.Account);
         Assert.Null(report.EvidenceTail);
-        Assert.Contains("Cannot sell more", report.BlockReason);
+        Assert.Contains("cannot sell more", report.BlockReason, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
