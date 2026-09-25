@@ -163,15 +163,25 @@ public sealed class MainPage : ContentPage
                 return;
             }
             cancellation.Token.ThrowIfCancellationRequested();
+            var fileLabel = Nt8FileLabelRules.Check(file.FileName, descriptor);
+            AppDiagnostics.Record(DiagnosticAction.FileLabelCheck, fileLabel == Nt8FileLabelStatus.MatchingDeclaredLabel ? DiagnosticOutcome.Completed : DiagnosticOutcome.Invalid);
+            if (fileLabel != Nt8FileLabelStatus.MatchingDeclaredLabel)
+            {
+                _dataLabel.Text = $"File rejected: {fileLabel}. Choose an original NT8 file named CONTRACT.Last/Bid/Ask.txt that matches the declaration (for example MES 09-26.Last.txt). No data admitted. A matching filename alone does not verify contents.";
+                AppDiagnostics.Record(DiagnosticAction.DataInspection, DiagnosticOutcome.Invalid, actionClock.ElapsedMilliseconds);
+                return;
+            }
+            var processingClock = Stopwatch.StartNew();
             using var stream = await file.OpenReadAsync();
             cancellation.Token.ThrowIfCancellationRequested();
             cancellation.CancelAfter(TimeSpan.FromSeconds(30));
             var result = await Task.Run(() => Nt8MinuteInspector.InspectAsync(stream, descriptor, cancellation.Token));
             cancellation.Token.ThrowIfCancellationRequested();
+            AppDiagnostics.Record(DiagnosticAction.DataProcessing, DiagnosticOutcome.Observed, processingClock.ElapsedMilliseconds);
             AppDiagnostics.Record(DiagnosticAction.DataInspection, result.Status switch { MarketDataInspectionStatus.Inspected => DiagnosticOutcome.Completed, MarketDataInspectionStatus.Unavailable => DiagnosticOutcome.Unavailable, MarketDataInspectionStatus.Cancelled => DiagnosticOutcome.Cancelled, _ => DiagnosticOutcome.Invalid }, actionClock.ElapsedMilliseconds);
             _inspectedData = result.Status == MarketDataInspectionStatus.Inspected ? result : null;
             _dataLabel.Text = result.Bars is { Count: > 0 } bars
-                ? $"Inspected {bars.Count} bars | Declared: {descriptor.Instrument}, {descriptor.PriceSeries} | UTC end stamps {bars[0].Timestamp:u} to {bars[^1].Timestamp:u} | Non-contiguous intervals: {result.NonContiguousIntervals} (not classified as missing data) | SHA-256: {result.SourceFingerprint}. Identity, session coverage and benchmark remain unverified; research disabled."
+                ? $"Inspected {bars.Count} bars | Declared: {descriptor.Instrument}, {descriptor.PriceSeries} | UTC end stamps {bars[0].Timestamp:u} to {bars[^1].Timestamp:u} | Non-contiguous intervals: {result.NonContiguousIntervals} (not classified as missing data) | SHA-256: {result.SourceFingerprint}. Filename matches the declaration only. Contents identity, session coverage and benchmark remain unverified; research disabled."
                 : $"Inspection: {result.Status} | {result.DiagnosticCode} | line {result.ErrorLine}. No data admitted; retry with a supported export.";
         }
         catch (OperationCanceledException) { AppDiagnostics.Record(DiagnosticAction.DataInspection, DiagnosticOutcome.Cancelled, actionClock.ElapsedMilliseconds); _dataLabel.Text = "Market-data selection cancelled. No data admitted."; }
@@ -209,15 +219,25 @@ public sealed class MainPage : ContentPage
                 return;
             }
             cancellation.Token.ThrowIfCancellationRequested();
+            var fileLabel = Nt8FileLabelRules.Check(file.FileName, descriptor);
+            AppDiagnostics.Record(DiagnosticAction.FileLabelCheck, fileLabel == Nt8FileLabelStatus.MatchingDeclaredLabel ? DiagnosticOutcome.Completed : DiagnosticOutcome.Invalid);
+            if (fileLabel != Nt8FileLabelStatus.MatchingDeclaredLabel)
+            {
+                _comparisonLabel.Text = $"File rejected: {fileLabel}. Choose an original NT8 file named CONTRACT.Last/Bid/Ask.txt that matches the declaration (for example MES 09-26.Last.txt). No data admitted. A matching filename alone does not verify contents.";
+                AppDiagnostics.Record(DiagnosticAction.SourceComparison, DiagnosticOutcome.Invalid, actionClock.ElapsedMilliseconds);
+                return;
+            }
+            var processingClock = Stopwatch.StartNew();
             using var stream = await file.OpenReadAsync();
             cancellation.Token.ThrowIfCancellationRequested();
             cancellation.CancelAfter(TimeSpan.FromSeconds(30));
             var reference = await Task.Run(() => Nt8MinuteInspector.InspectAsync(stream, descriptor, cancellation.Token));
             var result = await Task.Run(() => MinuteSeriesComparison.Compare(primary, reference, cancellation.Token));
             cancellation.Token.ThrowIfCancellationRequested();
+            AppDiagnostics.Record(DiagnosticAction.ComparisonProcessing, DiagnosticOutcome.Observed, processingClock.ElapsedMilliseconds);
             AppDiagnostics.Record(DiagnosticAction.SourceComparison, result.Status switch { MinuteComparisonStatus.Compared => DiagnosticOutcome.Completed, MinuteComparisonStatus.Cancelled => DiagnosticOutcome.Cancelled, _ => DiagnosticOutcome.Invalid }, actionClock.ElapsedMilliseconds);
             _comparisonLabel.Text = result.Status == MinuteComparisonStatus.Compared
-                ? $"Source agreement: {result.MatchingBars} matching, {result.ConflictingBars} differing, {result.PrimaryOnlyBars} only in primary, {result.ReferenceOnlyBars} only in reference. Same source bytes: {result.SameSourceBytes}. Primary SHA-256: {result.PrimaryFingerprint} | Reference SHA-256: {result.ReferenceFingerprint}. Full observed ranges compared; neither source identity, session coverage nor independence is verified. Research remains disabled."
+                ? $"Source agreement: {result.MatchingBars} matching, {result.ConflictingBars} differing, {result.PrimaryOnlyBars} only in primary, {result.ReferenceOnlyBars} only in reference. Same source bytes: {result.SameSourceBytes}. Primary SHA-256: {result.PrimaryFingerprint} | Reference SHA-256: {result.ReferenceFingerprint}. File labels match the declaration only. Full observed ranges compared; neither source identity, session coverage nor independence is verified. Research remains disabled."
                 : $"Comparison unavailable: {result.DiagnosticCode}; reference inspection: {reference.DiagnosticCode}. Correct the reference and retry. Research remains disabled.";
         }
         catch (OperationCanceledException) { AppDiagnostics.Record(DiagnosticAction.SourceComparison, DiagnosticOutcome.Cancelled, actionClock.ElapsedMilliseconds); _comparisonLabel.Text = "Comparison cancelled. No comparison evidence created."; }

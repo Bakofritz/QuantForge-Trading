@@ -33,7 +33,7 @@ internal sealed class DiagnosticPanel : ContentView
         {
             Spacing = 6, Children =
             {
-                new Label { Text = "DIAGNOSTIC TEST BUILD v30.06 - simulation only", FontAttributes = FontAttributes.Bold },
+                new Label { Text = "DIAGNOSTIC TEST BUILD v30.07 - simulation only", FontAttributes = FontAttributes.Bold },
                 new Label { Text = "Available: manifest/minute inspection, source comparison, clear and cancel. Full backtests and sunflower menus are not implemented. Recording collects app action names, UTC times, durations, managed-memory samples and device/OS/display details. No file names, file contents, passwords, typed contract labels or device identifiers are logged. Your optional problem notes are included." },
                 _status, _start, _stop, _note, _mark, _export, _clear
             }

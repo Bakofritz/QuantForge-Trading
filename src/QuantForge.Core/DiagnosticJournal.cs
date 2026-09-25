@@ -13,7 +13,7 @@ public enum DiagnosticAction
     SessionStarted, SessionStopped, ProblemMarked, ManifestInspection, DataInspection,
     SourceComparison, DataCleared, DeclarationChanged, CancelRequested, PageAppeared,
     PageDisappeared, WindowActivated, WindowDeactivated, WindowStopped, WindowResumed,
-    MemorySample, ExportRequested
+    MemorySample, ExportRequested, FileLabelCheck, ManifestProcessing, DataProcessing, ComparisonProcessing
 }
 public enum DiagnosticOutcome { Observed, Started, Completed, Cancelled, Invalid, Unavailable }
 public sealed record DiagnosticEnvironment(string Build, string Model, string Manufacturer,
