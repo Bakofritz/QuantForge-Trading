@@ -157,3 +157,11 @@ The simulated account lifecycle is covered by regression tests for buy/sell, ins
 v26.49 corrects the native test-project nullability compile failure identified by GitHub Actions for v26.48.
 
 The correction does not weaken research admission, execution timing, evidence-chain, simulated-account, or live-account authority boundaries. It is independently validated and classified as stable only if the complete required GitHub Actions workflow passes.
+
+
+## v26.50 additions
+v26.50 hardens research admission failure handling. When a simulation intent does not belong to the admitted strategy, the deterministic research runner now returns an **Invalid** report rather than allowing that admission failure to escape as an unclassified runtime exception.
+
+The invalid report contains no simulated account state and no execution-evidence tail. This keeps malformed research requests fail-closed while preserving the distinction between invalid admission and data-blocked execution.
+
+This is a program-stability correction. It does not mean all trading calculations, indicators, market analysis, optimization mathematics, or calibration have been certified correct.
