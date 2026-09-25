@@ -28,6 +28,30 @@ public static class ReadOnlyResearchOrchestrator
                 throw new InvalidOperationException("Read-only research orchestration cannot grant order, settings, or live-account authority.");
         }
 
-        return DeterministicResearchRunner.RunBatch(batch.Runs);
+        var reports = new List<ResearchReport>(batch.Runs.Count);
+        foreach (var run in batch.Runs)
+        {
+            try
+            {
+                reports.Add(DeterministicResearchRunner.Run(run));
+            }
+            catch (Exception ex)
+            {
+                var id = run.Job.Identity;
+                reports.Add(new ResearchReport(
+                    id.JobFingerprint,
+                    ResearchResultStatus.Invalid,
+                    id.DatasetFingerprint,
+                    id.StrategyFingerprint,
+                    id.ExecutionPolicyFingerprint,
+                    id.ParameterFingerprint,
+                    id.TemporalPartition,
+                    $"Contained batch execution failure: {ex.Message}",
+                    null,
+                    null));
+            }
+        }
+
+        return reports;
     }
 }
