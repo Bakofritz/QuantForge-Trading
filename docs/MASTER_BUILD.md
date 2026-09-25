@@ -213,3 +213,21 @@ These are engineering planning estimates, not runtime certification.
 - The user's Phase 2 approval will authorize the same full-automation model for Phase 2, continuing through all required correction and validation iterations until Phase 2 completion.
 - The same progression model applies successively to later phases until the approved production roadmap is complete.
 - This phase-level automation authorization does not authorize merging to protected main, final stable promotion, live-account operation, live credentials, automatic live orders, or any materially expanded scope without the applicable approval and safety gates.
+
+
+## v27.00 — Phase 2 Integration Automation Kickoff
+- Phase 1 completion was confirmed on v26.50 through authoritative GitHub Actions validation: static gate, restore, native compilation, and 29-test execution passed with 0 warnings/errors.
+- User approval authorizes full Mellon automation through Phase 2 within the approved production roadmap, using the same inspect → build → test → analyze → correct → revalidate cycle.
+- Phase 2 priority is integration hardening around the already-validated research core: data/strategy admission boundaries, quarantine/scrubbing interfaces, read-only multi-strategy research/optimization pathways, provenance/evidence propagation, and reliable component-to-component state communication.
+- Phase 2 must preserve all Phase 1 blocking contracts: fail-closed data integrity, core-function validity, authority separation, evidence/provenance integrity, causal execution, and strict separation from live-account authority.
+- Mellon may create successive correction-candidate branches/PRs and repeat validation without requesting approval for each ordinary Phase 2 correction cycle.
+- Domain-calculation defects remain non-blocking only when they do not compromise Phase 2 core integrity, safety, authority, or basic program operation; they must remain explicitly recorded.
+- No merge to protected main, live-account capability, live credentials, automatic live orders, or materially expanded scope is authorized by this phase approval.
+- Phase 2 completion will be reported only after its blocking integration criteria are validated; then manual approval will be requested for Phase 3 transition.
+
+### v27.00 initial Phase 2 validation state
+- Branch: master/v27.00-phase2-integration.
+- Baseline: v26.50 commit 2a4831c4ab20a1e4340f0597a71aa9f3ef529e03.
+- Initial source inspection: completed.
+- Authoritative Phase 2 validation after the kickoff documentation change: pending.
+- This kickoff does not claim Phase 2 completion.
