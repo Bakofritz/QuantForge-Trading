@@ -183,3 +183,17 @@ These are engineering planning estimates, not runtime certification.
 > After every correction cycle, use authoritative validation where available. Do not claim a build is stable without the required evidence. Once all blocking requirements pass, the build may be presented as a **stable program build with flagged domain issues**, if applicable, for manual review. Do not merge, promote, or release beyond the approval boundary without the required human approval.
 >
 > Never grant live-account, live-broker, automatic-order, credential, or application-setting authority through research, simulation, optimization, scrubbing, validation, or stabilization.
+
+
+## v26.50 — Research Admission Failure Containment Hardening
+- Baseline: v26.49 validated correction candidate at commit 137d772dd1ee6edfb00bec0a7130aa7ba2e6b764.
+- Hardened the deterministic research runner so intent/strategy identity admission failures are converted into explicit **Invalid** research reports instead of escaping as unclassified runtime exceptions.
+- Added regression coverage confirming that a strategy-identity mismatch produces no simulated account state and no execution evidence.
+- Preserved fail-closed authority, data admission, causal execution, ledger isolation, and evidence-chain boundaries.
+- No live broker, live account, automatic order submission, credentials, application-setting mutation, or platform UI capability was introduced.
+- This correction addresses program-level failure containment; it does not certify domain-specific trading mathematics.
+
+### v26.50 validation
+- Source correction commits: 28a60e53d821a3b75f51ae8a54ea2dac97a2aff3 and 084e09345e675c783a25f6525d9085c405c9940e.
+- Authoritative GitHub Actions validation is required before v26.50 can be classified as stable.
+- Local native compilation is not claimed.
