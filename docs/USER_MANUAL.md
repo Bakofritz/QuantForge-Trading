@@ -174,3 +174,16 @@ Phase 2 continues from the validated research core and focuses on integration ha
 Phase 2 remains research-only. Strategy scrubbing, optimization, replay, simulation, and validation do not grant live-account authority, order submission authority, credentials, or application-setting mutation authority.
 
 A Phase 2 build is not considered complete until its required integration and blocking safety/data-integrity tests pass in authoritative validation.
+
+
+## Cumulative production phase plan
+The build documentation carries the authoritative engineering phase plan. In plain language, the roadmap is:
+
+1. **Phase 1 — Core integrity foundation: COMPLETE.** Make sure the research engine, data flow, safety boundaries, and internal communication are trustworthy.
+2. **Phase 2 — Integration hardening: ACTIVE.** Make the existing parts work together reliably: data admission, strategy quarantine/scrubbing, feature selection, multi-strategy research, read-only optimization, provenance/evidence, and component state/error communication.
+3. **Phase 3 — Research workflow completion: PLANNED.** Finish the complete user-directed research workflow from import/audit through research and reproducible results.
+4. **Phase 4 — Product/UI integration: PLANNED.** Connect validated research services to Android/Windows user interfaces without allowing the UI to bypass safety or authority controls.
+5. **Phase 5 — Production hardening and release readiness: PLANNED.** Harden packaging, deployment, performance, recovery, compatibility, security, documentation, and release traceability.
+6. **Phase 6 — Live-account readiness review: SEPARATELY GOVERNED.** Research completion does not activate live trading. Any live-account capability requires a separate scope, safety design, validation, and explicit approvals.
+
+Every build should state which phase it is in, what that phase is trying to accomplish, what was completed, what remains, what is being tested, and the estimated progress toward the phase and overall product goal. Future phases are plans, not claims that those capabilities already exist.
