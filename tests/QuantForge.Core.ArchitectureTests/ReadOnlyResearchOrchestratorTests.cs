@@ -33,6 +33,31 @@ public class ReadOnlyResearchOrchestratorTests
                 ResearchBatchMode.ReadOnlyResearch, new[] { run })));
     }
 
+
+    [Fact]
+    public void Orchestrator_contains_one_invalid_run_without_suppressing_valid_sibling()
+    {
+        var valid = Request("s1", "sha-1");
+        var invalid = Request("s2", "sha-2") with
+        {
+            Intents = new[]
+            {
+                new SimulationIntent("wrong-strategy", "batch|s2|account", SimulationSide.Buy, SimulationIntentType.Market, 1m,
+                    new DateTimeOffset(2026, 1, 1, 10, 0, 0, TimeSpan.Zero),
+                    new DateTimeOffset(2026, 1, 1, 10, 1, 0, TimeSpan.Zero))
+            }
+        };
+
+        var reports = ReadOnlyResearchOrchestrator.Run(new ResearchBatchRequest(
+            ResearchBatchMode.ReadOnlyResearch, new[] { valid, invalid }));
+
+        Assert.Equal(2, reports.Count);
+        Assert.Equal(ResearchResultStatus.Complete, reports[0].Status);
+        Assert.Equal(ResearchResultStatus.Invalid, reports[1].Status);
+        Assert.Null(reports[1].Account);
+        Assert.Null(reports[1].EvidenceTail);
+    }
+
     private static ResearchRunRequest Request(string strategyId, string fingerprint)
     {
         var time = new DateTimeOffset(2026, 1, 1, 10, 0, 0, TimeSpan.Zero);
