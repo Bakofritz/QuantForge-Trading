@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   closeout-docs:
-    if: github.event.head_commit.message == 'v29.10: synchronize phase 4 closeout documentation'
+    if: "${{ github.event.head_commit.message == 'v29.10b: repair phase 4 closeout documentation helper' }}"
     runs-on: ubuntu-latest
     steps:
       - name: Check out Phase 4 branch
