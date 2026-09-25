@@ -2,7 +2,8 @@ namespace QuantForge.Core;
 
 public sealed record ResearchWorkflowRequest(
     ResearchBatchRequest Batch,
-    IReadOnlyList<DataReliabilityAssessment> Reliability);
+    IReadOnlyList<DataReliabilityAssessment> Reliability,
+    IReadOnlyList<ResearchTimeframeContext>? TimeframeContexts = null);
 
 public sealed record ResearchWorkflowResult(
     IReadOnlyList<ResearchReport> Reports,
@@ -29,6 +30,19 @@ public static class ResearchWorkflowCoordinator
                 throw new InvalidOperationException("A research workflow cannot contain duplicate reliability assessments for one dataset.");
         }
 
+        var timeframeByJob = new Dictionary<string, ResearchTimeframeContext>(StringComparer.Ordinal);
+        if (request.TimeframeContexts is not null)
+        {
+            foreach (var context in request.TimeframeContexts)
+            {
+                if (string.IsNullOrWhiteSpace(context.JobFingerprint))
+                    throw new InvalidOperationException("Multi-timeframe workflow context requires research job identity.");
+
+                if (!timeframeByJob.TryAdd(context.JobFingerprint, context))
+                    throw new InvalidOperationException("A research workflow cannot contain duplicate multi-timeframe contexts for one job.");
+            }
+        }
+
         var jobIds = new HashSet<string>(StringComparer.Ordinal);
         var reports = new List<ResearchReport>(request.Batch.Runs.Count);
         var statuses = new List<ResearchComponentStatus>(request.Batch.Runs.Count);
@@ -45,6 +59,11 @@ public static class ResearchWorkflowCoordinator
             else if (!string.Equals(run.Job.Data.DatasetFingerprint, identity.DatasetFingerprint, StringComparison.Ordinal))
             {
                 report = Invalid(identity, "Research job data identity does not match the reproducibility dataset fingerprint.");
+            }
+            else if (timeframeByJob.TryGetValue(identity.JobFingerprint, out var timeframeContext) &&
+                     !TryValidateTimeframeContext(timeframeContext, out var timeframeReason))
+            {
+                report = Invalid(identity, $"Multi-timeframe causal validation failed: {timeframeReason}");
             }
             else if (!reliabilityByDataset.TryGetValue(identity.DatasetFingerprint, out var reliability))
             {
@@ -78,6 +97,23 @@ public static class ResearchWorkflowCoordinator
         }
 
         return new ResearchWorkflowResult(reports, statuses, request.Reliability.ToArray());
+    }
+
+    private static bool TryValidateTimeframeContext(
+        ResearchTimeframeContext context,
+        out string? reason)
+    {
+        try
+        {
+            ResearchTimeframeContextRules.Validate(context);
+            reason = null;
+            return true;
+        }
+        catch (InvalidOperationException ex)
+        {
+            reason = ex.Message;
+            return false;
+        }
     }
 
     private static string ReliabilityBlockReason(DataReliabilityAssessment reliability)
