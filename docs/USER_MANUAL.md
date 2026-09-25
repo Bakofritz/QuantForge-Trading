@@ -253,3 +253,14 @@ If reliability information is absent, refers to another dataset, or contains dup
 Source archives now include SOURCE_MANIFEST.json with the Git commit, source tree, and every source file's SHA-256. A companion .sha256 file checks the archive itself. These identify source bytes; they do not certify device behavior or trading profitability.
 
 The application is primarily C#/.NET 10 with Windows/Android .NET MAUI shells. The sunflower reference is the intended final interface. The present shell is basic; full charting, script translation, AI/scout/bot operation, and complete import-to-results device workflows are not all implemented. Live-account authority remains disabled.
+
+
+## v30.01 — Startup and rejected-refresh behavior
+
+At startup the shell shows that validated research data is not loaded, reliability is not admitted, and research commands are disabled. Its diagnostic is QF-AWAITING-DATA.
+
+When a summary is supplied on the UI thread, old displayed jobs are cleared before validation. Invalid input shows QF-PRESENTATION-REJECTED and leaves research commands disabled. Correct the input and submit a fresh valid summary; old results are never silently reused. Expected validation errors are contained; unexpected runtime exceptions propagate after clearing the session, with the shell still showing a rejection diagnostic. Raw internal exception details are not displayed.
+
+QF-DATA-BLOCKED retains read-only visibility while blocking research execution. QF-PRESENTATION-READY means the presentation input passed validation; individual reports may still be Invalid or DataBlocked. It does not mean profitability, completed research, calibrated trade mathematics or live authority.
+
+Undefined authority values, unknown research modes and duplicate job identities are rejected. The session is a display lifecycle, not a substitute for the core data/strategy/evidence admission gates. Native build validation does not replace real Windows/Android runtime testing.

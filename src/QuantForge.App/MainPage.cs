@@ -6,7 +6,8 @@ namespace QuantForge.App;
 
 public sealed class MainPage : ContentPage
 {
-    private readonly ProductApplicationCoordinator _coordinator = new();
+    private readonly ProductApplicationSession _session = new();
+    private readonly Label _diagnosticLabel = new();
     private readonly Label _workflowLabel = new();
     private readonly Label _sectionLabel = new();
     private readonly Label _reliabilityLabel = new();
@@ -18,7 +19,7 @@ public sealed class MainPage : ContentPage
     {
         Title = "QuantForge";
 
-        _liveAuthorityLabel.Text = "Live trading: disabled";
+        ShowUnavailable("Awaiting validated research data", _session.DiagnosticCode);
 
         Content = new ScrollView
         {
@@ -38,6 +39,7 @@ public sealed class MainPage : ContentPage
                     {
                         Text = "Research workspace shell"
                     },
+                    _diagnosticLabel,
                     _workflowLabel,
                     _sectionLabel,
                     _reliabilityLabel,
@@ -59,16 +61,38 @@ public sealed class MainPage : ContentPage
     }
 
     public void ApplySummary(
-        ResearchWorkflowSummary summary,
+        ResearchWorkflowSummary? summary,
         ProductWorkspaceSection section)
     {
-        ArgumentNullException.ThrowIfNull(summary);
+        ShowUnavailable("Validating research data", "QF-PRESENTATION-LOADING");
+        try
+        {
+            _session.Load(summary, section);
+        }
+        finally
+        {
+            if (_session.State is null)
+                ShowUnavailable("Research data could not be displayed. Correct the input and retry.", _session.DiagnosticCode);
+        }
+        if (_session.State is not { } state)
+            return;
 
-        var state = _coordinator.Present(summary, section);
         Bind(state);
+        _diagnosticLabel.Text = $"Session: {_session.Status} | {_session.DiagnosticCode}";
     }
 
-    public void Bind(ProductApplicationViewModel state)
+    private void ShowUnavailable(string message, string diagnostic)
+    {
+        _diagnosticLabel.Text = $"{message} | {diagnostic}";
+        _workflowLabel.Text = "Workflow: not loaded";
+        _sectionLabel.Text = "Workspace: awaiting validated state";
+        _reliabilityLabel.Text = "Data reliability: not admitted";
+        _researchCommandLabel.Text = "Research commands: disabled";
+        _liveAuthorityLabel.Text = "Live trading: disabled";
+        _jobsLayout.Children.Clear();
+    }
+
+    private void Bind(ProductApplicationViewModel state)
     {
         ArgumentNullException.ThrowIfNull(state);
 
