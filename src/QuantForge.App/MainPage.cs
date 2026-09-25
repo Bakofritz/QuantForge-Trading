@@ -8,12 +8,11 @@ namespace QuantForge.App;
 
 public sealed class MainPage : ContentPage
 {
-    private readonly Button _inspectManifestButton = new() { Text = "Inspect research manifest" };
-    private readonly Label _manifestLabel = new() { Text = "No manifest inspected. Inspection does not admit data or enable research." };
-    private readonly Entry _instrumentEntry = new() { Placeholder = "Declared contract, e.g. MES 09-26", MaxLength = 64 };
-    private readonly Picker _priceSeriesPicker = new() { Title = "Declared price series", ItemsSource = new[] { "Last", "Bid", "Ask" } };
-    private readonly Button _inspectDataButton = new() { Text = "Inspect NT8 one-minute export (UTC)" };
-    private readonly Label _dataLabel = new() { Text = "No market data inspected. Contract and price series must be declared; text rows cannot verify them." };
+    private readonly Button _inspectManifestButton = new() { Text = "Inspect QuantForge JSON manifest" };
+    private readonly Label _manifestLabel = new() { Text = "Advanced: QuantForge research metadata (.json), up to 64 KiB. Market-data TXT files do not belong here." };
+    private readonly Label _fileDetailsLabel = new() { Text = "Contract and Last/Bid/Ask will be read from the filename. Labels remain unverified." };
+    private readonly Button _inspectDataButton = new() { Text = "Choose market-data TXT (UTC one-minute)" };
+    private readonly Label _dataLabel = new() { Text = "Choose an original NT8 UTC one-minute export. Up to 8 MiB / 100,000 bars. Daily and tick files are not supported in this build." };
     private Nt8MinuteInspectionResult? _inspectedData;
     private readonly Button _compareDataButton = new() { Text = "Compare export with same declared contract and series", IsEnabled = false };
     private readonly Button _clearDataButton = new() { Text = "Clear inspected market data", IsEnabled = false };
@@ -38,10 +37,6 @@ public sealed class MainPage : ContentPage
         _cancelInspectionButton.Clicked += (_, _) => CancelInspection();
         _compareDataButton.Clicked += async (_, _) => await CompareDataAsync();
         _clearDataButton.Clicked += (_, _) => { AppDiagnostics.Record(DiagnosticAction.DataCleared); ClearInspectedData(); };
-        _instrumentEntry.TextChanged += (_, _) => ClearInspectedData();
-        _instrumentEntry.Completed += (_, _) => AppDiagnostics.Record(DiagnosticAction.DeclarationChanged);
-        _priceSeriesPicker.SelectedIndexChanged += (_, _) => { AppDiagnostics.Record(DiagnosticAction.DeclarationChanged); ClearInspectedData(); };
-
         ShowUnavailable("Awaiting validated research data", _session.DiagnosticCode);
 
         Content = new ScrollView
@@ -63,16 +58,17 @@ public sealed class MainPage : ContentPage
                         Text = "Research workspace shell"
                     },
                     new DiagnosticPanel(),
-                    _inspectManifestButton,
-                    _manifestLabel,
-                    _instrumentEntry,
-                    _priceSeriesPicker,
+                    new Label { Text = "Market data", FontAttributes = FontAttributes.Bold },
                     _inspectDataButton,
+                    _fileDetailsLabel,
                     _dataLabel,
                     _compareDataButton,
                     _clearDataButton,
                     _comparisonLabel,
                     _cancelInspectionButton,
+                    new Label { Text = "Advanced: research metadata", FontAttributes = FontAttributes.Bold },
+                    _manifestLabel,
+                    _inspectManifestButton,
                     _diagnosticLabel,
                     _workflowLabel,
                     _sectionLabel,
@@ -103,11 +99,18 @@ public sealed class MainPage : ContentPage
         _manifestLabel.Text = "Manifest inspection pending. No data admitted.";
         try
         {
-            var file = await FilePicker.Default.PickAsync(new PickOptions { PickerTitle = "Choose a QuantForge research manifest" });
+            var file = await FilePicker.Default.PickAsync(new PickOptions { PickerTitle = "Choose QuantForge metadata (.json), not market-data TXT" });
             if (file is null)
             {
                 AppDiagnostics.Record(DiagnosticAction.ManifestInspection, DiagnosticOutcome.Cancelled, actionClock.ElapsedMilliseconds);
                 _manifestLabel.Text = "Manifest selection cancelled. No data admitted.";
+                return;
+            }
+            if (!file.FileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+            {
+                AppDiagnostics.Record(DiagnosticAction.InspectionReason, DiagnosticOutcome.WrongFileType);
+                AppDiagnostics.Record(DiagnosticAction.ManifestInspection, DiagnosticOutcome.Invalid, actionClock.ElapsedMilliseconds);
+                _manifestLabel.Text = "This control accepts QuantForge JSON metadata only. For minute TXT files, use Choose market-data TXT above. Daily and tick files are not supported yet.";
                 return;
             }
             cancellation.Token.ThrowIfCancellationRequested();
@@ -117,9 +120,10 @@ public sealed class MainPage : ContentPage
             var result = await ResearchManifestReader.InspectAsync(stream, cancellation.Token);
             cancellation.Token.ThrowIfCancellationRequested();
             AppDiagnostics.Record(DiagnosticAction.ManifestInspection, result.Status switch { ManifestInspectionStatus.Inspected => DiagnosticOutcome.Completed, ManifestInspectionStatus.Unavailable => DiagnosticOutcome.Unavailable, ManifestInspectionStatus.Cancelled => DiagnosticOutcome.Cancelled, _ => DiagnosticOutcome.Invalid }, actionClock.ElapsedMilliseconds);
+            AppDiagnostics.Record(DiagnosticAction.InspectionReason, ImportInspectionFeedback.Classify(result.DiagnosticCode));
             _manifestLabel.Text = result.Manifest is { } manifest
                 ? $"Manifest inspected | Dataset: {manifest.DatasetId} | Strategy: {manifest.StrategyId} | Source SHA-256: {result.SourceFingerprint}. Data and strategy remain unadmitted."
-                : $"Manifest inspection: {result.Status} | {result.DiagnosticCode}. No data admitted; choose a valid file to retry.";
+                : $"{ImportInspectionFeedback.Describe(result.DiagnosticCode)} | {result.DiagnosticCode}. No data admitted.";
         }
         catch (OperationCanceledException)
         {
@@ -144,12 +148,6 @@ public sealed class MainPage : ContentPage
         if (_inspectionCancellation is not null) return;
         ClearInspectedData();
         _dataLabel.Text = "Market-data inspection pending. Research remains disabled.";
-        if (string.IsNullOrWhiteSpace(_instrumentEntry.Text) || _priceSeriesPicker.SelectedIndex < 0)
-        {
-            _dataLabel.Text = "Declare the contract and Last/Bid/Ask series before choosing a UTC one-minute NT8 export.";
-            return;
-        }
-        var descriptor = new Nt8MinuteDescriptor(_instrumentEntry.Text, (MarketPriceSeries)_priceSeriesPicker.SelectedIndex);
         using var cancellation = BeginInspection();
         var actionClock = Stopwatch.StartNew();
         AppDiagnostics.Record(DiagnosticAction.DataInspection, DiagnosticOutcome.Started);
@@ -163,14 +161,16 @@ public sealed class MainPage : ContentPage
                 return;
             }
             cancellation.Token.ThrowIfCancellationRequested();
-            var fileLabel = Nt8FileLabelRules.Check(file.FileName, descriptor);
-            AppDiagnostics.Record(DiagnosticAction.FileLabelCheck, fileLabel == Nt8FileLabelStatus.MatchingDeclaredLabel ? DiagnosticOutcome.Completed : DiagnosticOutcome.Invalid);
-            if (fileLabel != Nt8FileLabelStatus.MatchingDeclaredLabel)
+            var descriptor = Nt8FileLabelRules.Detect(file.FileName);
+            AppDiagnostics.Record(DiagnosticAction.FileLabelDetected, descriptor is null ? DiagnosticOutcome.Invalid : DiagnosticOutcome.Completed);
+            if (descriptor is null)
             {
-                _dataLabel.Text = $"File rejected: {fileLabel}. Choose an original NT8 file named CONTRACT.Last/Bid/Ask.txt that matches the declaration (for example MES 09-26.Last.txt). No data admitted. A matching filename alone does not verify contents.";
+                _dataLabel.Text = "Unrecognized NT8 filename. Expected a contract and series, for example MES 09-26.Last.txt. Do not rename unrelated data to force acceptance.";
+                AppDiagnostics.Record(DiagnosticAction.InspectionReason, DiagnosticOutcome.InvalidFileLabel);
                 AppDiagnostics.Record(DiagnosticAction.DataInspection, DiagnosticOutcome.Invalid, actionClock.ElapsedMilliseconds);
                 return;
             }
+            _fileDetailsLabel.Text = $"Filename labels: {descriptor.Instrument}, {descriptor.PriceSeries}. Contents identity, interval and timezone are not proven by the filename.";
             var processingClock = Stopwatch.StartNew();
             using var stream = await file.OpenReadAsync();
             cancellation.Token.ThrowIfCancellationRequested();
@@ -179,10 +179,11 @@ public sealed class MainPage : ContentPage
             cancellation.Token.ThrowIfCancellationRequested();
             AppDiagnostics.Record(DiagnosticAction.DataProcessing, DiagnosticOutcome.Observed, processingClock.ElapsedMilliseconds);
             AppDiagnostics.Record(DiagnosticAction.DataInspection, result.Status switch { MarketDataInspectionStatus.Inspected => DiagnosticOutcome.Completed, MarketDataInspectionStatus.Unavailable => DiagnosticOutcome.Unavailable, MarketDataInspectionStatus.Cancelled => DiagnosticOutcome.Cancelled, _ => DiagnosticOutcome.Invalid }, actionClock.ElapsedMilliseconds);
+            AppDiagnostics.Record(DiagnosticAction.InspectionReason, ImportInspectionFeedback.Classify(result.DiagnosticCode));
             _inspectedData = result.Status == MarketDataInspectionStatus.Inspected ? result : null;
             _dataLabel.Text = result.Bars is { Count: > 0 } bars
                 ? $"Inspected {bars.Count} bars | Declared: {descriptor.Instrument}, {descriptor.PriceSeries} | UTC end stamps {bars[0].Timestamp:u} to {bars[^1].Timestamp:u} | Non-contiguous intervals: {result.NonContiguousIntervals} (not classified as missing data) | SHA-256: {result.SourceFingerprint}. Filename matches the declaration only. Contents identity, session coverage and benchmark remain unverified; research disabled."
-                : $"Inspection: {result.Status} | {result.DiagnosticCode} | line {result.ErrorLine}. No data admitted; retry with a supported export.";
+                : $"{ImportInspectionFeedback.Describe(result.DiagnosticCode)} | {result.DiagnosticCode} | line {result.ErrorLine}. No data admitted.";
         }
         catch (OperationCanceledException) { AppDiagnostics.Record(DiagnosticAction.DataInspection, DiagnosticOutcome.Cancelled, actionClock.ElapsedMilliseconds); _dataLabel.Text = "Market-data selection cancelled. No data admitted."; }
         catch (Exception error) when (error is not OutOfMemoryException)
@@ -196,6 +197,7 @@ public sealed class MainPage : ContentPage
     private void ClearInspectedData()
     {
         _inspectedData = null;
+        _fileDetailsLabel.Text = "No file selected. Contract and Last/Bid/Ask will be read from the filename; labels remain unverified.";
         _compareDataButton.IsEnabled = _clearDataButton.IsEnabled = false;
         _dataLabel.Text = "No market data retained. Contract and series declarations do not verify file identity.";
         _comparisonLabel.Text = "No source comparison. Agreement is not live-benchmark verification.";
@@ -232,6 +234,7 @@ public sealed class MainPage : ContentPage
             cancellation.Token.ThrowIfCancellationRequested();
             cancellation.CancelAfter(TimeSpan.FromSeconds(30));
             var reference = await Task.Run(() => Nt8MinuteInspector.InspectAsync(stream, descriptor, cancellation.Token));
+            AppDiagnostics.Record(DiagnosticAction.InspectionReason, ImportInspectionFeedback.Classify(reference.DiagnosticCode));
             var result = await Task.Run(() => MinuteSeriesComparison.Compare(primary, reference, cancellation.Token));
             cancellation.Token.ThrowIfCancellationRequested();
             AppDiagnostics.Record(DiagnosticAction.ComparisonProcessing, DiagnosticOutcome.Observed, processingClock.ElapsedMilliseconds);
@@ -250,7 +253,6 @@ public sealed class MainPage : ContentPage
     {
         _inspectionCancellation = new CancellationTokenSource();
         _inspectDataButton.IsEnabled = _inspectManifestButton.IsEnabled = false;
-        _instrumentEntry.IsEnabled = _priceSeriesPicker.IsEnabled = false;
         _cancelInspectionButton.IsEnabled = true;
         _compareDataButton.IsEnabled = _clearDataButton.IsEnabled = false;
         return _inspectionCancellation;
@@ -260,7 +262,6 @@ public sealed class MainPage : ContentPage
     {
         _inspectionCancellation = null;
         _inspectDataButton.IsEnabled = _inspectManifestButton.IsEnabled = true;
-        _instrumentEntry.IsEnabled = _priceSeriesPicker.IsEnabled = true;
         _cancelInspectionButton.IsEnabled = false;
         _compareDataButton.IsEnabled = _clearDataButton.IsEnabled = _inspectedData is not null;
     }

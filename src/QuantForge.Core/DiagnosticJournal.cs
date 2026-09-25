@@ -13,9 +13,9 @@ public enum DiagnosticAction
     SessionStarted, SessionStopped, ProblemMarked, ManifestInspection, DataInspection,
     SourceComparison, DataCleared, DeclarationChanged, CancelRequested, PageAppeared,
     PageDisappeared, WindowActivated, WindowDeactivated, WindowStopped, WindowResumed,
-    MemorySample, ExportRequested, FileLabelCheck, ManifestProcessing, DataProcessing, ComparisonProcessing
+    MemorySample, ExportRequested, FileLabelCheck, ManifestProcessing, DataProcessing, ComparisonProcessing, InspectionReason, FileLabelDetected
 }
-public enum DiagnosticOutcome { Observed, Started, Completed, Cancelled, Invalid, Unavailable }
+public enum DiagnosticOutcome { Observed, Started, Completed, Cancelled, Invalid, Unavailable, FileTooLarge, TooManyBars, WrongFileType, InvalidFormat, InvalidValues, InvalidOrder, EmptyFile, InvalidEncoding, InvalidFileLabel }
 public sealed record DiagnosticEnvironment(string Build, string Model, string Manufacturer,
     string OperatingSystem, double ScreenWidth, double ScreenHeight, double Density);
 public sealed record DiagnosticEvent(long Sequence, DateTimeOffset Utc, long ElapsedMilliseconds,

@@ -12,6 +12,16 @@ public static class Nt8FileLabelRules
     private static readonly Regex FileLabel = new(@"\A(?<contract>[A-Z][A-Z0-9]{0,11} (?:0[1-9]|1[0-2])-[0-9]{2})\.(?<series>Last|Bid|Ask)\.txt\z",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
+    // An untrusted label suggestion, never proof of contents, interval or timezone.
+    public static Nt8MinuteDescriptor? Detect(string? fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName) || fileName.Length > 128) return null;
+        var match = FileLabel.Match(fileName);
+        if (!match.Success) return null;
+        return new(match.Groups["contract"].Value.ToUpperInvariant(),
+            Enum.Parse<MarketPriceSeries>(match.Groups["series"].Value, true));
+    }
+
     public static Nt8FileLabelStatus Check(string? fileName, Nt8MinuteDescriptor descriptor)
     {
         ArgumentNullException.ThrowIfNull(descriptor);
