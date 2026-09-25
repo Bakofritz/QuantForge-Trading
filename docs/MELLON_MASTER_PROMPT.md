@@ -290,3 +290,8 @@ Accepted sequencing and design corrections:
 8. Profile before pooling or ref-struct optimization. Start with reproducible bounded search baselines, then compare adaptive search; do not promise zero allocation or require gradient search for nondifferentiable strategies.
 
 Later research automation is not an implicit Phase 6 transition. Live-account authority, broker credentials/connectivity, live orders and protected-setting mutation remain disabled and separately governed. Existing data contribution and son's contributor workflow deferrals remain in effect.
+
+
+## v30.05 current continuation state
+
+Active phase: Phase 5, branch master/v30.00-phase5-production-hardening, draft PR #9. v30.04 baseline 4c9a192ac73c14f89795e536f5c542bc56208db4 passed both authoritative gates. Recheck v30.05's own exact head and tests before calling it validated. The shell can inspect manifests/minute exports, cancel and clear retained data, and compare two declared sources; these actions do not admit data, verify benchmark independence, run strategies or grant authority. Never convert source agreement to a live reliability score. User APK delivery remains withheld until the complete agreed usable workflow is runtime-validated. Phase completion, main merge and stable release remain unapproved; ordinary Phase 5 continuation is authorized.

@@ -13,6 +13,10 @@ public sealed class MainPage : ContentPage
     private readonly Picker _priceSeriesPicker = new() { Title = "Declared price series", ItemsSource = new[] { "Last", "Bid", "Ask" } };
     private readonly Button _inspectDataButton = new() { Text = "Inspect NT8 one-minute export (UTC)" };
     private readonly Label _dataLabel = new() { Text = "No market data inspected. Contract and price series must be declared; text rows cannot verify them." };
+    private Nt8MinuteInspectionResult? _inspectedData;
+    private readonly Button _compareDataButton = new() { Text = "Compare export with same declared contract and series", IsEnabled = false };
+    private readonly Button _clearDataButton = new() { Text = "Clear inspected market data", IsEnabled = false };
+    private readonly Label _comparisonLabel = new() { Text = "No source comparison. Agreement is not live-benchmark verification." };
     private readonly Button _cancelInspectionButton = new() { Text = "Cancel inspection", IsEnabled = false };
     private CancellationTokenSource? _inspectionCancellation;
     private readonly ProductApplicationSession _session = new();
@@ -31,6 +35,10 @@ public sealed class MainPage : ContentPage
 
         _inspectDataButton.Clicked += async (_, _) => await InspectDataAsync();
         _cancelInspectionButton.Clicked += (_, _) => CancelInspection();
+        _compareDataButton.Clicked += async (_, _) => await CompareDataAsync();
+        _clearDataButton.Clicked += (_, _) => ClearInspectedData();
+        _instrumentEntry.TextChanged += (_, _) => ClearInspectedData();
+        _priceSeriesPicker.SelectedIndexChanged += (_, _) => ClearInspectedData();
 
         ShowUnavailable("Awaiting validated research data", _session.DiagnosticCode);
 
@@ -58,6 +66,9 @@ public sealed class MainPage : ContentPage
                     _priceSeriesPicker,
                     _inspectDataButton,
                     _dataLabel,
+                    _compareDataButton,
+                    _clearDataButton,
+                    _comparisonLabel,
                     _cancelInspectionButton,
                     _diagnosticLabel,
                     _workflowLabel,
@@ -122,6 +133,7 @@ public sealed class MainPage : ContentPage
     private async Task InspectDataAsync()
     {
         if (_inspectionCancellation is not null) return;
+        ClearInspectedData();
         _dataLabel.Text = "Market-data inspection pending. Research remains disabled.";
         if (string.IsNullOrWhiteSpace(_instrumentEntry.Text) || _priceSeriesPicker.SelectedIndex < 0)
         {
@@ -144,6 +156,7 @@ public sealed class MainPage : ContentPage
             cancellation.CancelAfter(TimeSpan.FromSeconds(30));
             var result = await Task.Run(() => Nt8MinuteInspector.InspectAsync(stream, descriptor, cancellation.Token));
             cancellation.Token.ThrowIfCancellationRequested();
+            _inspectedData = result.Status == MarketDataInspectionStatus.Inspected ? result : null;
             _dataLabel.Text = result.Bars is { Count: > 0 } bars
                 ? $"Inspected {bars.Count} bars | Declared: {descriptor.Instrument}, {descriptor.PriceSeries} | UTC end stamps {bars[0].Timestamp:u} to {bars[^1].Timestamp:u} | Non-contiguous intervals: {result.NonContiguousIntervals} (not classified as missing data) | SHA-256: {result.SourceFingerprint}. Identity, session coverage and benchmark remain unverified; research disabled."
                 : $"Inspection: {result.Status} | {result.DiagnosticCode} | line {result.ErrorLine}. No data admitted; retry with a supported export.";
@@ -157,12 +170,52 @@ public sealed class MainPage : ContentPage
         }
     }
 
+    private void ClearInspectedData()
+    {
+        _inspectedData = null;
+        _compareDataButton.IsEnabled = _clearDataButton.IsEnabled = false;
+        _dataLabel.Text = "No market data retained. Contract and series declarations do not verify file identity.";
+        _comparisonLabel.Text = "No source comparison. Agreement is not live-benchmark verification.";
+    }
+
+    private async Task CompareDataAsync()
+    {
+        if (_inspectionCancellation is not null || _inspectedData is not { DeclaredDescriptor: { } descriptor } primary) return;
+        _comparisonLabel.Text = "Comparing declared sources. No reliability or research admission granted.";
+        using var cancellation = BeginInspection();
+        try
+        {
+            var file = await FilePicker.Default.PickAsync(new PickOptions
+            { PickerTitle = $"Choose another UTC minute export declared as {descriptor.Instrument} {descriptor.PriceSeries}" });
+            if (file is null)
+            {
+                _comparisonLabel.Text = "Reference selection cancelled. No comparison evidence created.";
+                return;
+            }
+            cancellation.Token.ThrowIfCancellationRequested();
+            using var stream = await file.OpenReadAsync();
+            cancellation.Token.ThrowIfCancellationRequested();
+            cancellation.CancelAfter(TimeSpan.FromSeconds(30));
+            var reference = await Task.Run(() => Nt8MinuteInspector.InspectAsync(stream, descriptor, cancellation.Token));
+            var result = await Task.Run(() => MinuteSeriesComparison.Compare(primary, reference, cancellation.Token));
+            cancellation.Token.ThrowIfCancellationRequested();
+            _comparisonLabel.Text = result.Status == MinuteComparisonStatus.Compared
+                ? $"Source agreement: {result.MatchingBars} matching, {result.ConflictingBars} differing, {result.PrimaryOnlyBars} only in primary, {result.ReferenceOnlyBars} only in reference. Same source bytes: {result.SameSourceBytes}. Primary SHA-256: {result.PrimaryFingerprint} | Reference SHA-256: {result.ReferenceFingerprint}. Full observed ranges compared; neither source identity, session coverage nor independence is verified. Research remains disabled."
+                : $"Comparison unavailable: {result.DiagnosticCode}; reference inspection: {reference.DiagnosticCode}. Correct the reference and retry. Research remains disabled.";
+        }
+        catch (OperationCanceledException) { _comparisonLabel.Text = "Comparison cancelled. No comparison evidence created."; }
+        catch (Exception error) when (error is not OutOfMemoryException)
+        { _comparisonLabel.Text = "Reference provider unavailable. No comparison evidence created; retry selection."; }
+        finally { EndInspection(); }
+    }
+
     private CancellationTokenSource BeginInspection()
     {
         _inspectionCancellation = new CancellationTokenSource();
         _inspectDataButton.IsEnabled = _inspectManifestButton.IsEnabled = false;
         _instrumentEntry.IsEnabled = _priceSeriesPicker.IsEnabled = false;
         _cancelInspectionButton.IsEnabled = true;
+        _compareDataButton.IsEnabled = _clearDataButton.IsEnabled = false;
         return _inspectionCancellation;
     }
 
@@ -172,12 +225,14 @@ public sealed class MainPage : ContentPage
         _inspectDataButton.IsEnabled = _inspectManifestButton.IsEnabled = true;
         _instrumentEntry.IsEnabled = _priceSeriesPicker.IsEnabled = true;
         _cancelInspectionButton.IsEnabled = false;
+        _compareDataButton.IsEnabled = _clearDataButton.IsEnabled = _inspectedData is not null;
     }
 
     private void CancelInspection()
     {
         if (_inspectionCancellation is null) return;
         _inspectionCancellation.Cancel();
+        ClearInspectedData();
         _cancelInspectionButton.IsEnabled = false;
         _manifestLabel.Text = "Inspection cancellation requested. Waiting for the file provider to return; no data admitted.";
         _dataLabel.Text = "Inspection cancellation requested. Waiting for the file provider to return; no data admitted.";

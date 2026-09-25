@@ -289,3 +289,10 @@ APK delivery rule: only provide the user an APK once the complete agreed usable 
 ## v30.04 — Cancel and retry inspection
 
 Cancel inspection requests cooperative cancellation for either file inspection. Leaving the page also requests cancellation. If a native picker is open, close or cancel that picker to return to the app. The app waits for the provider to return before enabling a new inspection; it never interprets cancellation as successful inspection or admission. Platform picker overlays, activity recreation, process termination and unresponsive providers still require native runtime testing. No hard deadline for external providers is promised.
+
+
+## v30.05 — Compare declared sources and clear data
+
+After a successful minute inspection, select Compare export with same declared contract and series. The chosen reference must be another UTC one-minute export for that declared contract and Last/Bid/Ask series. The app cannot prove this from the text rows; do not select an unrelated instrument or price series. It reports matching bars, differing OHLCV bars and timestamps found in only one source across their full observed ranges. No session calendar or missing bars are inferred. Identical bytes are flagged; different bytes do not prove independent provenance.
+
+Agreement is not a live-data reliability score and cannot enable a research job. Independent reference provenance, real instrument mapping and session coverage remain required. Clear inspected market data releases the app's retained in-memory primary bars and comparison text. Changing a declaration or starting a new primary inspection also clears them. This does not delete your original files or promise cleanup of native picker cache files. Inspection results are not persisted across process restart. No APK or full working backtester is released by this feature.
