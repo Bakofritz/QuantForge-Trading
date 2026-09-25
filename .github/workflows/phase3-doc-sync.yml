@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   append-phase3-docs:
-    if: github.event.head_commit.message == 'v28.06: synchronize phase 3 cumulative documentation'
+    if: "${{ github.event.head_commit.message == 'v28.06b: correct phase 3 documentation sync workflow' }}"
     runs-on: ubuntu-latest
     steps:
       - name: Check out Phase 3 branch
