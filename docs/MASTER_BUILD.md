@@ -356,3 +356,18 @@ This is cumulative: update the running documents rather than creating a new phas
 - Overall usable research platform estimate: **99%**. Full end-to-end QuantForge implementation estimate: **90%**; later phases remain intentionally incomplete.
 - Live environment: disabled/separately governed. No broker credentials, live orders, or live-account authority were introduced.
 - Next action: documentation/release-evidence synchronization is this closeout iteration; after its own CI passes, stop before Phase 3 and request human transition approval.
+
+## v28.06 — Phase 3 Research Workflow Closeout
+
+- Active phase: **Phase 3 — Research workflow completion**.
+- Validated Phase 2/main baseline: merge commit `a0ff34925d2ee48a8de83c22b53519e43f167e63`.
+- Phase 3 branch: `master/v28.00-phase3-research-workflow`.
+- Implemented across v28.00-v28.05: reliability-gated research admission; explicit unresolved-gap/conflicting-overlap blocking; isolated optimization variant planning; causal multi-timeframe closed-bar/information-availability validation; deterministic workflow summaries and Markdown export; publication binding of complete results to strategy provenance, execution evidence, and matching data reliability; consolidated Phase 3 exit-contract coverage.
+- Blocking criteria validated: research data lineage remains fingerprint-bound; missing live-benchmark comparison and unresolved data defects cannot silently become performance evidence; optimization variants retain unique reproducibility identity and ledger namespaces; higher-timeframe information must be closed and available at decision time; unsafe order/live/settings authority remains fail-closed; blocked/invalid jobs contain no simulated account state or execution evidence; publishable results require complete provenance and reliability identity.
+- Authoritative Phase 3 CI checkpoints: v28.00 run `36085788992` SUCCESS; v28.01 run `36085885453` SUCCESS; v28.02 run `36086003716` SUCCESS; v28.03 run `36086120712` SUCCESS; v28.04 run `36086183938` SUCCESS; v28.05 exit-contract run `36086318725` SUCCESS.
+- Phase 3 engineering and blocking exit-contract implementation: **100%** for the approved research-workflow scope. This is not a claim that Product/UI, production-release hardening, or separately governed live-account capability is complete.
+- Overall usable research platform estimate: **99%**. Full end-to-end QuantForge implementation estimate: **94%**; Phase 4 Product/UI integration and later hardening remain.
+- Non-blocking domain issues carried forward: no new calculation defect was established by the Phase 3 blocking-contract suite; real strategy performance, commissions/slippage calibration, indicator mathematics, and market-model calibration remain subject to later domain validation with representative data.
+- Live environment: **disabled and separately governed**. Phase 3 introduced no broker credentials, live order route, live-account authorization, or application-setting mutation authority.
+- Superseding roadmap status: Phase 1 COMPLETE; Phase 2 COMPLETE and merged to `main`; Phase 3 COMPLETE at engineering/exit-contract level pending final branch closeout/merge approval; Phase 4 remains PLANNED and requires transition approval.
+- Next action: remove the one-time documentation-sync workflow, run the final authoritative quality gate, package the exact closeout artifact, open the Phase 3 pull request, and stop before merge/Phase 4 transition for the applicable human approval.

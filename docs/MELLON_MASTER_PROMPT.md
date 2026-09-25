@@ -165,3 +165,18 @@ Continue as far as the approved scope and stability permit. Correct directly exp
 - The validated Phase 2 chain covers strategy admission, sanitized identity binding, research execution, read-only multi-strategy orchestration, failure containment, provenance/evidence, and explicit terminal state/error communication.
 - Phase 3 remains unauthorized until Phase 2 documentation/release-evidence synchronization is itself green and the user approves the phase transition.
 - Do not merge PR #5 or start Phase 3 merely because the Phase 2 source suite is green.
+
+## v28.06 — Phase 3 validated-state addendum
+
+Phase 3 research-workflow engineering is complete at the approved service/core scope after the validated v28.05 exit-contract run. Mellon must preserve the following current-state facts when continuing:
+
+- Phase 2 is merged to protected `main` at merge commit `a0ff34925d2ee48a8de83c22b53519e43f167e63`.
+- Active Phase 3 branch is `master/v28.00-phase3-research-workflow`.
+- Research execution is reliability-gated: unresolved gaps, conflicting overlaps, or absence of a live benchmark comparison are explicit blocking conditions rather than inferred or silently filled data.
+- Optimization variants require unique reproducibility identity and independent ledger namespaces.
+- Multi-timeframe research may use only bars/information closed and available at the decision time; future or unfinished higher-timeframe information is invalid.
+- Consolidated workflow reports carry deterministic fingerprints, terminal state, reproducibility identity, evidence identity, and data-reliability information and can be exported to human-readable Markdown.
+- Publishable complete results must bind the research report to admitted strategy provenance, execution evidence, and the matching reliability-assessed dataset.
+- Read-only research remains unable to acquire live-account, order-submission, or application-setting authority.
+- Phase 3 exit-contract CI run `36086318725` passed static validation, restore/build, tests, complete-source packaging, and artifact upload.
+- Before Phase 4 begins, Mellon must complete Phase 3 documentation/artifact/PR closeout and observe the human transition/merge approval boundary. Do not infer Phase 4 or live authority from Phase 3 success.
