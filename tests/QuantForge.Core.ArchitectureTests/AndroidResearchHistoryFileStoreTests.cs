@@ -1,0 +1,1 @@
+using QuantForge.Core;namespace QuantForge.Core.ArchitectureTests;public sealed class AndroidResearchHistoryFileStoreTests{[Fact]public void Empty_history_round_trips(){var p=Path.GetTempFileName();try{var s=new AndroidResearchHistoryFileStore(p);s.Save(Array.Empty<AndroidResearchHistoryEntry>());Assert.Empty(s.Load());}finally{File.Delete(p);}}}

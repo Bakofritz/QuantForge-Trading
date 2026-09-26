@@ -1,0 +1,1 @@
+using QuantForge.Core;namespace QuantForge.Core.ArchitectureTests;public sealed class AndroidResearchComparisonCardTests{[Fact]public void Comparison_card_never_declares_winner(){var v=new ResearchOutcomeComparison("c","d","l","r",ResearchResultStatus.Complete,ResearchResultStatus.Complete,1m,2m,1m);Assert.False(AndroidResearchComparisonCardRules.Create(v).DeclaresWinner);}}

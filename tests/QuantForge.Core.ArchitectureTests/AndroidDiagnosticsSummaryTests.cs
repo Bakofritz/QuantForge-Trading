@@ -1,0 +1,1 @@
+using QuantForge.Core;namespace QuantForge.Core.ArchitectureTests;public sealed class AndroidDiagnosticsSummaryTests{[Fact]public void Failures_are_explicit(){var v=AndroidDiagnosticsSummaryRules.Create(2,1,0,true);Assert.Equal("Failures present",v.Status);}}

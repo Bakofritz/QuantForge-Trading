@@ -127,6 +127,11 @@ public static class DeterministicResearchRunner
         }
 
             var finalSnapshot = account.Snapshot(events[^1].Close);
+            var trace = ResearchExecutionTraceFactory.Create(
+                request.Job.Identity,
+                fills,
+                events,
+                request.StartingCash);
 
             var report = new ResearchReport(
             request.Job.Identity.JobFingerprint,
@@ -138,7 +143,8 @@ public static class DeterministicResearchRunner
             request.Job.Identity.TemporalPartitionId,
             null,
             finalSnapshot,
-            evidence);
+            evidence,
+            trace);
 
             ResearchReportRules.Validate(report);
             return report;

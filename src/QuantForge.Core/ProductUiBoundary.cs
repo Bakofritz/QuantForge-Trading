@@ -53,6 +53,9 @@ public static class ProductUiBoundary
     {
         ArgumentNullException.ThrowIfNull(summary);
 
+        if (!Enum.IsDefined(summary.Mode))
+            throw new InvalidOperationException("Unknown research mode cannot be presented.");
+
         if (string.IsNullOrWhiteSpace(summary.WorkflowFingerprint))
             throw new InvalidOperationException("Product UI workflow state requires a workflow fingerprint.");
 
@@ -71,6 +74,9 @@ public static class ProductUiBoundary
 
         foreach (var report in summary.Reports)
             ResearchReportRules.Validate(report);
+
+        if (summary.Reports.Select(x => x.JobId).Distinct(StringComparer.Ordinal).Count() != summary.TotalRuns)
+            throw new InvalidOperationException("Product UI requires unique research job identities.");
 
         foreach (var reliability in summary.Reliability)
             DataReliabilityRules.Validate(reliability);

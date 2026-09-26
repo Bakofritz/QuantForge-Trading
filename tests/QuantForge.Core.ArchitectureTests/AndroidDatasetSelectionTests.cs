@@ -1,0 +1,1 @@
+using QuantForge.Core;namespace QuantForge.Core.ArchitectureTests;public sealed class AndroidDatasetSelectionTests{[Fact]public void Selection_binds_exact_dataset(){var g=TestFixtures.Gates();var s=AndroidDatasetSelectionRules.Create(g.Dataset);AndroidDatasetSelectionRules.Validate(s,g.Dataset);}}

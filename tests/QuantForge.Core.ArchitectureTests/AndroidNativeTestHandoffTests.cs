@@ -1,0 +1,1 @@
+using QuantForge.Core;namespace QuantForge.Core.ArchitectureTests;public sealed class AndroidNativeTestHandoffTests{[Fact]public void Handoff_does_not_require_production_signing_for_test_apk(){var v=AndroidNativeTestHandoffRules.Create("1","1","c","t","app.apk",new[]{"mixed-import"});Assert.False(v.ProductionSigningRequired);}}

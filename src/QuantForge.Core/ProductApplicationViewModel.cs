@@ -78,7 +78,15 @@ public static class ProductApplicationViewModelRules
             invalidCount != workflow.InvalidRuns)
             throw new InvalidOperationException("Product application run states do not match workflow counts.");
 
-        var hasBlockingDataIssues = workflow.Reliability.Any(x => !DataReliabilityRules.IsResearchAdmissible(x));
+        // Missing, unrelated, or ambiguous assessments must never enable research.
+        var requiredDatasets = workflow.Runs.Select(x => x.DatasetFingerprint)
+            .ToHashSet(StringComparer.Ordinal);
+        var assessedDatasets = workflow.Reliability.Select(x => x.DatasetFingerprint)
+            .ToHashSet(StringComparer.Ordinal);
+        var hasBlockingDataIssues =
+            workflow.Reliability.Count != assessedDatasets.Count ||
+            !requiredDatasets.SetEquals(assessedDatasets) ||
+            workflow.Reliability.Any(x => !DataReliabilityRules.IsResearchAdmissible(x));
         var allowedOperations = GetAllowedOperations(activeSection);
 
         return new ProductApplicationViewModel(
@@ -89,8 +97,8 @@ public static class ProductApplicationViewModelRules
             workflow.CompleteRuns,
             workflow.DataBlockedRuns,
             workflow.InvalidRuns,
-            workflow.MinimumReliabilityScore,
-            workflow.AverageReliabilityScore,
+            hasBlockingDataIssues ? null : workflow.Reliability.Min(x => x.ScorePercent),
+            hasBlockingDataIssues ? null : workflow.Reliability.Average(x => x.ScorePercent),
             hasBlockingDataIssues,
             ResearchCommandsEnabled: !hasBlockingDataIssues,
             LiveAccountEnabled: false,

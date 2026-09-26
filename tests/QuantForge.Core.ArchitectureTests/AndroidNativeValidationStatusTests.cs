@@ -1,0 +1,1 @@
+using QuantForge.Core;namespace QuantForge.Core.ArchitectureTests;public sealed class AndroidNativeValidationStatusTests{[Fact]public void Source_only_status_requests_apk(){var s=AndroidNativeValidationStatusRules.Create("1","1",ReleaseValidationMatrixRules.Create(true,null,null));Assert.Contains("APK build pending",s.Status);Assert.False(s.LiveTradingEnabled);}}

@@ -1,0 +1,4 @@
+using System.Text;using System.Text.Json;
+namespace QuantForge.Core;
+public sealed class AndroidResearchHomeFileStore
+{private readonly string _path;public AndroidResearchHomeFileStore(string path)=>_path=Path.GetFullPath(path);public void Save(AndroidResearchHome value){Validate(value);Directory.CreateDirectory(Path.GetDirectoryName(_path)!);File.WriteAllText(_path,JsonSerializer.Serialize(value,new JsonSerializerOptions{WriteIndented=true}),new UTF8Encoding(false));}public AndroidResearchHome Load(){var v=JsonSerializer.Deserialize<AndroidResearchHome>(File.ReadAllText(_path))??throw new InvalidOperationException("Android research home JSON is invalid.");Validate(v);return v;}private static void Validate(AndroidResearchHome v){if(string.IsNullOrWhiteSpace(v.WorkspaceFingerprint)||v.LiveTradingEnabled||v.OrderSubmissionEnabled)throw new InvalidOperationException("Android research home violates research-only authority.");}}

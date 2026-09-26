@@ -1,0 +1,4 @@
+namespace QuantForge.Core;
+public sealed record NativeBuildExpectation(string Commit,string Tree,string AppVersion,string BuildCode,string Platform);
+public sealed record NativeBuildReconciliation(bool Matches,IReadOnlyList<string> Differences);
+public static class NativeBuildReconciliationRules{public static NativeBuildReconciliation Compare(NativeBuildExpectation expected,NativeBuildEvidence actual){NativeBuildEvidenceRules.Validate(actual);var d=new List<string>();if(expected.Commit!=actual.Commit)d.Add("commit");if(expected.Tree!=actual.Tree)d.Add("tree");if(expected.AppVersion!=actual.AppVersion)d.Add("app-version");if(expected.BuildCode!=actual.BuildCode)d.Add("build-code");if(!string.Equals(expected.Platform,actual.Platform,StringComparison.OrdinalIgnoreCase))d.Add("platform");if(!actual.BuildPassed)d.Add("build-failed");return new(d.Count==0,d);}}

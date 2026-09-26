@@ -1,0 +1,1 @@
+using QuantForge.Core;namespace QuantForge.Core.ArchitectureTests;public sealed class AndroidDiagnosticsSummaryFileStoreTests{[Fact]public void Summary_round_trips(){var v=AndroidDiagnosticsSummaryRules.Create(1,0,1,true);var p=Path.GetTempFileName();try{var s=new AndroidDiagnosticsSummaryFileStore(p);s.Save(v);Assert.Equal(v,s.Load());}finally{File.Delete(p);}}}

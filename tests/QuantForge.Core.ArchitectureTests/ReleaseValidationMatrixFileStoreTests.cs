@@ -1,0 +1,1 @@
+using QuantForge.Core;namespace QuantForge.Core.ArchitectureTests;public sealed class ReleaseValidationMatrixFileStoreTests{[Fact]public void Matrix_round_trips(){var v=ReleaseValidationMatrixRules.Create(true,null,null);var p=Path.GetTempFileName();try{var s=new ReleaseValidationMatrixFileStore(p);s.Save(v);Assert.Equal(v,s.Load());}finally{File.Delete(p);}}}

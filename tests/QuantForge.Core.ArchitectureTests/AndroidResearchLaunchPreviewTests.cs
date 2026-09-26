@@ -1,0 +1,1 @@
+using QuantForge.Core;namespace QuantForge.Core.ArchitectureTests;public sealed class AndroidResearchLaunchPreviewTests{[Fact]public void Preview_is_read_only(){var preview=new AndroidResearchLaunchPreview("P","D","DS","SS",false,"Blocked",false);Assert.False(preview.CanSubmitOrders);Assert.False(preview.ReadyToPrepare);}}

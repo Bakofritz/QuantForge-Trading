@@ -134,3 +134,22 @@ public sealed class ProductApplicationCoordinatorTests
         return ProductApplicationViewModelRules.Create(workflow, section);
     }
 }
+
+public sealed class ProductApplicationCoordinatorWorkflowResultTests
+{
+    [Fact]
+    public void Workflow_result_presentation_uses_read_only_ui_boundary()
+    {
+        var report = new ResearchReport("job", ResearchResultStatus.DataBlocked, "dataset", "strategy", "timing", "params", "wf", "blocked", null, null);
+        var result = new ResearchWorkflowResult(
+            new[] { report },
+            new[] { new ResearchComponentStatus("job", ResearchComponentState.DataBlocked, "blocked") },
+            new[] { new DataReliabilityAssessment("dataset", false, 1, 0, "blocked") });
+
+        var view = new ProductApplicationCoordinator().PresentWorkflowResult(result, ResearchBatchMode.ReadOnlyResearch, ProductWorkspaceSection.Reports);
+        Assert.False(view.LiveAccountEnabled);
+        Assert.False(view.CanSubmitOrders);
+        Assert.False(view.CanChangeApplicationSettings);
+        Assert.Equal(ProductUiJobState.DataBlocked, view.Jobs[0].State);
+    }
+}

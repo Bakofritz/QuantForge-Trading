@@ -21,6 +21,9 @@ public static class AuthorityBoundary
         if (domain == AuthorityDomain.LiveAccount)
             throw new InvalidOperationException("Live-account authority is outside the research runtime.");
 
+        if (!Enum.IsDefined(domain))
+            throw new InvalidOperationException("Unknown authority domain is not admitted to research.");
+
         return new ResearchAuthorityDecision(
             domain,
             CanSubmitOrders: false,

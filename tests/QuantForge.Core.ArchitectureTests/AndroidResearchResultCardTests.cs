@@ -1,0 +1,1 @@
+using QuantForge.Core;namespace QuantForge.Core.ArchitectureTests;public sealed class AndroidResearchResultCardTests{[Fact]public void Blocked_result_has_no_equity(){var r=new ResearchReport("j",ResearchResultStatus.DataBlocked,"d","s","e","p","t","blocked",null,null,null);var c=AndroidResearchResultCardRules.Create(r);Assert.Null(c.Equity);Assert.False(c.CanSubmitOrders);}}
