@@ -1,0 +1,71 @@
+{
+  "schema": "automellon-build-manifest/v1",
+  "protocol_version": "1.0",
+  "program": "QuantForge",
+  "canonical_repository": "Bakofritz/QuantForge-Trading",
+  "development_branch": "master/v30.00-phase5-production-hardening",
+  "iteration_checkpoint": 15,
+  "authority": {
+    "simulation_only": true,
+    "live_trading": false,
+    "broker_orders": false,
+    "merge_protected_main": false,
+    "force_push": false
+  },
+  "execution": {
+    "fail_closed": true,
+    "arbitrary_shell": false,
+    "max_log_tail_lines": 80,
+    "result_file": "AUTOMELLON_RESULT.json",
+    "artifact_retention_days": 30
+  },
+  "phases": [
+    {
+      "id": "01-audit",
+      "description": "Confirm repository state before build operations.",
+      "commands": [
+        "git_status"
+      ],
+      "stable_checkpoint": false
+    },
+    {
+      "id": "02-static-validation",
+      "description": "Run deterministic repository and packaging gates.",
+      "commands": [
+        "static_validate",
+        "package_source_test"
+      ],
+      "stable_checkpoint": true
+    },
+    {
+      "id": "03-native-environment",
+      "description": "Record native SDK availability.",
+      "commands": [
+        "dotnet_info"
+      ],
+      "stable_checkpoint": false
+    },
+    {
+      "id": "04-native-restore-test",
+      "description": "Restore and run Release native tests.",
+      "commands": [
+        "dotnet_restore",
+        "dotnet_test"
+      ],
+      "stable_checkpoint": true
+    }
+  ],
+  "pause_rules": {
+    "on_any_nonzero_exit": true,
+    "on_unknown_command": true,
+    "on_authority_violation": true,
+    "on_protected_branch": true,
+    "at_stable_checkpoint": false
+  },
+  "reporting": {
+    "compact_json": true,
+    "full_logs_as_github_artifact": true,
+    "chat_file_uploads_required": false,
+    "github_is_canonical": true
+  }
+}
