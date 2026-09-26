@@ -1,4 +1,4 @@
-# AutoMellon Build Controller Protocol v1.0
+# AutoMellon Build Controller Protocol v1.1
 
 ## Canonical source
 GitHub repository `Bakofritz/QuantForge-Trading` is the canonical source, audit trail, CI source and artifact source for AutoMellon. Routine source ZIP/handoff uploads through chat are retired. Chat may still be used for exceptional recovery artifacts when GitHub itself is unavailable.
@@ -32,3 +32,22 @@ New command IDs require a reviewed source change to both the Python allowlist an
 
 ## GitHub-only handoff
 Repository source, manifests, protocol, CI evidence and build artifacts live in GitHub. A new AutoMellon session begins by reading this protocol, the build manifest, current branch HEAD, latest controller result/artifact, and current Phase documentation. No chat-local ZIP is required for normal continuation.
+
+
+## Integrity checkpoints and progress reporting — v1.1
+AutoMellon uses two checkpoint levels. A lightweight checkpoint occurs every 5 feature iterations and reviews trajectory, repository cleanliness, required documentation continuity, validation status, and outstanding risks. A thorough integrity checkpoint occurs every 15 feature iterations and audits repository structure, the original Mellon documentation contract, static/package gates, core/native tests, Android and Windows pipelines, source/artifact provenance, version/manifest consistency, simulation-only authority boundaries, and handoff continuity. Each thorough checkpoint generates a progress report with completed work, evidence, unresolved risks, next-phase plan, and retention recommendations.
+
+A checkpoint PASS is engineering evidence only. It does not by itself confer device acceptance, stable-release status, protected-main merge authority, or live/broker/order authority.
+
+## Original Mellon format contract
+Every retained build keyframe must preserve the established Mellon repository structure and documentation requirements. Required material includes README, AGENT_START_HERE, CURRENT_STATE, SOURCE_MANIFEST, guides 01–07, cumulative build/iteration history, validation evidence, handoff/startup instructions, Android and Windows native status, candidate-versus-stable status, and authority-boundary notes. AutoMellon may extend documentation, but must not silently remove or weaken the original contract. A format-contract change requires owner approval.
+
+## Keyframe retention policy
+Git commits remain the working audit trail while development is active. AutoMellon designates important milestone builds and material intermediate changes as keyframes so long-term retention can favor meaningful states rather than hundreds of redundant packaged iterations. The controller has **no deletion, pruning, history-rewrite, artifact-purge, or branch-cleanup authority**.
+
+At each thorough checkpoint, the progress report must identify retention candidates in three groups: retain as milestone keyframe; retain as material intermediate keyframe; candidate for later owner-approved cleanup. The report must explain why each cleanup candidate is believed redundant and identify dependencies or provenance risks before any action is considered.
+
+No cleanup recommendation is executed automatically. The owner decides what, if anything, is removed. When such a checkpoint occurs, the checkpoint documentation is the item surfaced in chat for owner review; routine source packages remain in GitHub. Compiled Android or PC artifacts are surfaced in chat only when owner/device input is required.
+
+## End-of-turn controller continuity
+When an AutoMellon turn resolves all presently known blocking errors, its final operational mutation should trigger the next GitHub validation/controller cycle. If an unresolved failure or owner-only boundary remains, fail closed and report instead of triggering speculative work.
