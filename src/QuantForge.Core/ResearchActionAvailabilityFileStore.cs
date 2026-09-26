@@ -1,0 +1,4 @@
+using System.Text;using System.Text.Json;
+namespace QuantForge.Core;
+public sealed class ResearchActionAvailabilityFileStore
+{private readonly string _path;public ResearchActionAvailabilityFileStore(string path)=>_path=Path.GetFullPath(path);public void Save(ResearchActionAvailability value){Validate(value);Directory.CreateDirectory(Path.GetDirectoryName(_path)!);File.WriteAllText(_path,JsonSerializer.Serialize(value,new JsonSerializerOptions{WriteIndented=true}),new UTF8Encoding(false));}public ResearchActionAvailability Load(){var v=JsonSerializer.Deserialize<ResearchActionAvailability>(File.ReadAllText(_path))??throw new InvalidOperationException("Research action state is invalid.");Validate(v);return v;}private static void Validate(ResearchActionAvailability v){if(v.CanSubmitOrders||v.CanEnableLiveAccount)throw new InvalidOperationException("Research action state cannot grant live authority.");}}

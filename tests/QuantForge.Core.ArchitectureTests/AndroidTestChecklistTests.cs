@@ -1,0 +1,1 @@
+using QuantForge.Core;namespace QuantForge.Core.ArchitectureTests;public sealed class AndroidTestChecklistTests{[Fact]public void Checklist_includes_simulation_research(){var m=ReleaseValidationMatrixRules.Create(true,null,null);var s=ReleaseCandidateSummaryRules.Create("1","1","c","t",m,m);Assert.Contains(AndroidTestChecklistRules.Create(s),x=>x.Id=="research");}}

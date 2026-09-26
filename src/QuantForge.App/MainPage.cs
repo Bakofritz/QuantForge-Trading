@@ -11,6 +11,17 @@ public sealed class MainPage : ContentPage
     private readonly Button _batchButton = new() { Text = "Choose multiple market-data TXT / ZIP files" };
     private readonly Button _clearBatchButton = new() { Text = "Clear batch", IsEnabled = false };
     private readonly Label _batchLabel = new() { Text = "Mix MES/MNQ and minute/day/tick files. Up to 64 files/members, 32 MiB per TXT, 64 MiB total ZIP input, 128 MiB total expanded text and 1,000,000 retained rows. Unclear identities stay unresolved; no research admission." };
+    private readonly Label _admissionReadinessLabel = new() { Text = "Admission readiness: inspect a batch to see which independently trusted inputs are still required. Inspection never grants admission." };
+    private readonly Button _inspectAdmissionEvidenceButton = new() { Text = "Check external admission evidence JSON", IsEnabled = false };
+    private readonly Label _admissionEvidenceLabel = new() { Text = "No external admission evidence inspected. Evidence is never inferred from the market data." };
+    private readonly Button _registerAdmissionButton = new() { Text = "Register verified dataset in local catalog", IsEnabled = false };
+    private readonly Button _showCatalogButton = new() { Text = "Show admitted datasets" };
+    private readonly Label _catalogLabel = new() { Text = "Local dataset catalog has not been loaded." };
+    private readonly Button _inspectSessionCoverageButton = new() { Text = "Check authoritative session coverage JSON", IsEnabled = false };
+    private readonly Label _sessionCoverageLabel = new() { Text = "No authoritative session-policy evidence checked for this batch." };
+    private MarketBatchAdmissionRequest? _pendingAdmissionRequest;
+    private readonly MarketAdmissionApplicationWorkflow _marketAdmissionWorkflow;
+    private readonly SessionCoverageArtifactFileStore _sessionCoverageStore;
     private readonly Microsoft.Maui.Controls.Switch _utcDayComparison = new();
     private MarketBatchResult? _batch;
     private readonly Button _inspectManifestButton = new() { Text = "Inspect QuantForge JSON manifest" };
@@ -25,6 +36,8 @@ public sealed class MainPage : ContentPage
     private readonly Button _cancelInspectionButton = new() { Text = "Cancel inspection", IsEnabled = false };
     private CancellationTokenSource? _inspectionCancellation;
     private readonly ProductApplicationSession _session = new();
+    private readonly AndroidTestPanel _androidTestPanel = new();
+    private readonly DiagnosticPanel _diagnosticPanel;
     private readonly Label _diagnosticLabel = new();
     private readonly Label _workflowLabel = new();
     private readonly Label _sectionLabel = new();
@@ -35,11 +48,20 @@ public sealed class MainPage : ContentPage
 
     public MainPage()
     {
+        _diagnosticPanel = new DiagnosticPanel(() => _androidTestPanel.CurrentSnapshotText());
+        _marketAdmissionWorkflow = new MarketAdmissionApplicationWorkflow(
+            new DatasetCatalogFileStore(Path.Combine(FileSystem.AppDataDirectory, "dataset-catalog.json")));
+        _sessionCoverageStore = new SessionCoverageArtifactFileStore(
+            Path.Combine(FileSystem.AppDataDirectory, "session-coverage"));
         Title = "QuantForge";
         _batchButton.Clicked += async (_, _) => await InspectBatchAsync();
-        _clearBatchButton.Clicked += (_, _) => { _batch = null; _batchLabel.Text = "Batch cleared. Original files unchanged."; _clearBatchButton.IsEnabled = false; AppDiagnostics.Record(DiagnosticAction.DataCleared); };
+        _clearBatchButton.Clicked += (_, _) => { _batch = null; _pendingAdmissionRequest = null; _batchLabel.Text = "Batch cleared. Original files unchanged."; _admissionReadinessLabel.Text = "Admission readiness cleared. No data admitted."; _admissionEvidenceLabel.Text = "External admission evidence cleared. No data admitted."; _registerAdmissionButton.IsEnabled = false; _clearBatchButton.IsEnabled = _inspectAdmissionEvidenceButton.IsEnabled = false; AppDiagnostics.Record(DiagnosticAction.DataCleared); };
 
         _inspectManifestButton.Clicked += async (_, _) => await InspectManifestAsync();
+        _inspectAdmissionEvidenceButton.Clicked += async (_, _) => await InspectAdmissionEvidenceAsync();
+        _registerAdmissionButton.Clicked += (_, _) => RegisterVerifiedDataset();
+        _showCatalogButton.Clicked += (_, _) => ShowAdmittedDatasets();
+        _inspectSessionCoverageButton.Clicked += async (_, _) => await InspectSessionCoverageAsync();
 
         _inspectDataButton.Clicked += async (_, _) => await InspectDataAsync();
         _cancelInspectionButton.Clicked += (_, _) => CancelInspection();
@@ -65,13 +87,23 @@ public sealed class MainPage : ContentPage
                     {
                         Text = "Research workspace shell"
                     },
-                    new DiagnosticPanel(),
+                    _diagnosticPanel,
+                    _androidTestPanel,
                     new Label { Text = "Market data", FontAttributes = FontAttributes.Bold },
                     _batchButton,
                     new Label { Text = "Optional: compare daily bars using UTC calendar days (exploratory, not exchange sessions). Applies to next batch." },
                     _utcDayComparison,
                     _clearBatchButton,
                     _batchLabel,
+                    new Label { Text = "Admission readiness", FontAttributes = FontAttributes.Bold },
+                    _admissionReadinessLabel,
+                    _inspectAdmissionEvidenceButton,
+                    _admissionEvidenceLabel,
+                    _registerAdmissionButton,
+                    _showCatalogButton,
+                    _catalogLabel,
+                    _inspectSessionCoverageButton,
+                    _sessionCoverageLabel,
                     new Label { Text = "Single-file minute inspection and manual reference comparison" },
                     _inspectDataButton,
                     _fileDetailsLabel,
@@ -108,6 +140,12 @@ public sealed class MainPage : ContentPage
     {
         if (_inspectionCancellation is not null) return;
         _batch = null;
+        _pendingAdmissionRequest = null;
+        _registerAdmissionButton.IsEnabled = false;
+        _inspectSessionCoverageButton.IsEnabled = false;
+        _sessionCoverageLabel.Text = "No authoritative session-policy evidence checked for this batch.";
+        _admissionReadinessLabel.Text = "Admission readiness pending. Inspection alone cannot grant admission.";
+        _admissionEvidenceLabel.Text = "No external admission evidence inspected for this batch.";
         ClearInspectedData();
         var utcDays = _utcDayComparison.IsToggled;
         using var cancellation = BeginInspection();
@@ -139,6 +177,8 @@ public sealed class MainPage : ContentPage
             AppDiagnostics.Record(DiagnosticAction.BatchProcessing, DiagnosticOutcome.Observed, processing.ElapsedMilliseconds);
             AppDiagnostics.Record(DiagnosticAction.BatchInspection, result.Completed ? DiagnosticOutcome.Completed : DiagnosticOutcome.Invalid, clock.ElapsedMilliseconds);
             AppDiagnostics.Record(DiagnosticAction.CrossValidation, result.Completed ? DiagnosticOutcome.Completed : DiagnosticOutcome.Invalid);
+            _androidTestPanel.Record(AndroidTestMilestone.MixedBatchInspection, result.Completed);
+            _androidTestPanel.Record(AndroidTestMilestone.CrossValidation, result.Completed);
             var lines = new List<string> { $"{result.Code} | {result.Files.Count} file results. Inspection only; research/live disabled." };
             foreach (var group in result.Files.GroupBy(f => f.Label?.Instrument ?? "Unresolved instrument").OrderBy(g => g.Key))
             {
@@ -152,18 +192,254 @@ public sealed class MainPage : ContentPage
                 lines.Add($"#{pair.Left} vs #{pair.Right}: {pair.Code} | {pair.Matching} matching, {pair.Conflicting} differing, {pair.LeftOnly}/{pair.RightOnly} only-left/right | {pair.Basis}");
             lines.Add($"{cross.OmittedPairs} eligible pairs omitted by limit. {cross.Limitation}");
             _batchLabel.Text = string.Join("\n\n", lines);
+            _admissionReadinessLabel.Text = RenderAdmissionReadiness(result);
         }
         catch (OperationCanceledException)
         {
             _batch = null; _batchLabel.Text = "Batch cancelled/timed out. No batch results retained.";
+            _admissionReadinessLabel.Text = "Admission readiness unavailable because the batch did not complete.";
+            _androidTestPanel.Record(AndroidTestMilestone.MixedBatchInspection, false);
             AppDiagnostics.Record(DiagnosticAction.BatchInspection, DiagnosticOutcome.Cancelled, clock.ElapsedMilliseconds);
         }
         catch (Exception error) when (error is not OutOfMemoryException)
         {
             _batch = null; _batchLabel.Text = "Batch provider/processing unavailable. No batch results retained.";
+            _admissionReadinessLabel.Text = "Admission readiness unavailable because the batch did not complete.";
+            _androidTestPanel.Record(AndroidTestMilestone.MixedBatchInspection, false);
             AppDiagnostics.Record(DiagnosticAction.BatchInspection, DiagnosticOutcome.Unavailable, clock.ElapsedMilliseconds);
         }
         finally { EndInspection(); }
+    }
+
+    private static string RenderAdmissionReadiness(MarketBatchResult batch)
+    {
+        var assessments = MarketAdmissionReadinessRules.AssessInspectionBatch(batch);
+        if (assessments.Count == 0)
+            return "Admission readiness unavailable. Complete a batch inspection first.";
+
+        var lines = new List<string>
+        {
+            "Inspection is descriptive only. QuantForge will not infer trusted instrument/timeframe identity, provenance, or session authority from filenames, prices, or cross-source agreement."
+        };
+        foreach (var assessment in assessments)
+        {
+            var requirements = assessment.Requirements.Count == 0
+                ? "ready for the existing admission-request pipeline"
+                : string.Join(", ", assessment.Requirements.Select(MarketAdmissionReadinessRules.Describe));
+            lines.Add($"#{assessment.FileIndex}: {assessment.Status} | {assessment.InspectionCode} | requires: {requirements}" +
+                (assessment.DatasetFingerprint is { Length: > 0 } fingerprint ? $" | SHA-256 {fingerprint}" : string.Empty));
+        }
+        lines.Add("Ready means only that an admission request can be formed from independently supplied evidence; it does not itself admit data or authorize research/live execution.");
+        return string.Join("\n", lines);
+    }
+
+    private async Task InspectAdmissionEvidenceAsync()
+    {
+        if (_inspectionCancellation is not null || _batch is not { Completed: true } batch) return;
+        using var cancellation = BeginInspection();
+        _admissionEvidenceLabel.Text = "External admission evidence inspection pending. No catalog entry will be written.";
+        try
+        {
+            var file = await FilePicker.Default.PickAsync(new PickOptions
+            {
+                PickerTitle = "Choose QuantForge market-admission evidence (.json)"
+            });
+            if (file is null)
+            {
+                _admissionEvidenceLabel.Text = "Admission-evidence selection cancelled. No data admitted.";
+                return;
+            }
+            if (!file.FileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+            {
+                _admissionEvidenceLabel.Text = "Admission evidence must be a QuantForge JSON document. No data admitted.";
+                return;
+            }
+
+            cancellation.Token.ThrowIfCancellationRequested();
+            using var stream = await file.OpenReadAsync();
+            cancellation.CancelAfter(TimeSpan.FromSeconds(30));
+            var inspected = await MarketAdmissionEvidenceReader.InspectAsync(stream, cancellation.Token);
+            cancellation.Token.ThrowIfCancellationRequested();
+            if (inspected.Status != MarketAdmissionEvidenceStatus.Inspected || inspected.Evidence is not { } evidence)
+            {
+                _admissionEvidenceLabel.Text = $"Admission evidence unavailable: {inspected.DiagnosticCode}. No data admitted.";
+                return;
+            }
+
+            var matching = batch.Files.Where(x =>
+                x.State == MarketFileState.Inspected &&
+                string.Equals(x.Data?.Hash, evidence.Provenance.SanitizedArtifactFingerprint, StringComparison.Ordinal)).ToArray();
+            if (matching.Length != 1)
+            {
+                _admissionEvidenceLabel.Text = matching.Length == 0
+                    ? "External evidence does not match the exact SHA-256 of an admission-eligible inspected source in this batch. No data admitted."
+                    : "External evidence matches more than one admission-eligible source unexpectedly. Resolve the batch identity before admission.";
+                return;
+            }
+
+            var request = MarketAdmissionPreparation.Prepare(matching[0], evidence);
+            var entry = MarketBatchAdmissionPipeline.CreateCatalogEntry(request); // dry-run only; no catalog mutation here.
+            _pendingAdmissionRequest = request;
+            _registerAdmissionButton.IsEnabled = true;
+            _admissionEvidenceLabel.Text =
+                $"Evidence verified for batch #{matching[0].Index}: dataset {entry.DatasetId} | {entry.Instrument} | {entry.Timeframe} | " +
+                $"range {entry.Start:u} to {entry.End:u} | data SHA-256 {entry.DatasetFingerprint} | evidence-file SHA-256 {inspected.SourceFingerprint}. " +
+                "Admission request can be formed, but this screen has not registered or admitted the dataset.";
+        }
+        catch (OperationCanceledException)
+        {
+            _admissionEvidenceLabel.Text = "Admission-evidence inspection cancelled. No data admitted.";
+        }
+        catch (Exception error) when (error is not OutOfMemoryException)
+        {
+            _admissionEvidenceLabel.Text = "Admission evidence conflicts with the inspected source or is unavailable. No data admitted; correct the evidence and retry.";
+        }
+        finally
+        {
+            EndInspection();
+        }
+    }
+
+    private void RegisterVerifiedDataset()
+    {
+        var request = _pendingAdmissionRequest;
+        if (request is null)
+        {
+            _registerAdmissionButton.IsEnabled = false;
+            _admissionEvidenceLabel.Text = "No verified admission request is pending. Re-check external evidence before registration.";
+            return;
+        }
+
+        try
+        {
+            var result = _marketAdmissionWorkflow.Admit(request);
+            _pendingAdmissionRequest = null;
+            _registerAdmissionButton.IsEnabled = false;
+            _admissionEvidenceLabel.Text =
+                $"Dataset {result.Entry.DatasetId} registered in the local catalog with exact SHA-256 {result.Entry.DatasetFingerprint}. " +
+                "Catalog admission does not authorize a strategy, research execution, broker connection, or live orders.";
+            _inspectSessionCoverageButton.IsEnabled = true;
+            ShowAdmittedDatasets();
+        }
+        catch (Exception error) when (error is not OutOfMemoryException)
+        {
+            _pendingAdmissionRequest = null;
+            _registerAdmissionButton.IsEnabled = false;
+            _admissionEvidenceLabel.Text =
+                "Dataset registration failed closed. The local catalog was not intentionally advanced; re-inspect the batch and external evidence before retrying.";
+        }
+    }
+
+    private void ShowAdmittedDatasets()
+    {
+        try
+        {
+            var entries = _marketAdmissionWorkflow.LoadEntries();
+            if (entries.Count == 0)
+            {
+                _catalogLabel.Text = "Local dataset catalog is empty.";
+                return;
+            }
+
+            var lines = new List<string>
+            {
+                $"Local admitted datasets: {entries.Count}. Catalog admission is necessary but not sufficient for research execution."
+            };
+            foreach (var entry in entries)
+                lines.Add($"{entry.DatasetId} | {entry.Instrument} | {entry.Timeframe} | {entry.Start:u} to {entry.End:u} | SHA-256 {entry.DatasetFingerprint}");
+            _catalogLabel.Text = string.Join("\n", lines);
+        }
+        catch (Exception error) when (error is not OutOfMemoryException)
+        {
+            _catalogLabel.Text = "Local dataset catalog could not be loaded or failed validation. No catalog contents are trusted.";
+        }
+    }
+
+    private async Task InspectSessionCoverageAsync()
+    {
+        if (_inspectionCancellation is not null || _batch is not { Completed: true } batch) return;
+        using var cancellation = BeginInspection();
+        _sessionCoverageLabel.Text = "Authoritative session-policy inspection pending. Coverage will be recomputed from exact inspected minute bars.";
+        try
+        {
+            var file = await FilePicker.Default.PickAsync(new PickOptions
+            {
+                PickerTitle = "Choose QuantForge authoritative session coverage evidence (.json)"
+            });
+            if (file is null)
+            {
+                _sessionCoverageLabel.Text = "Session-policy evidence selection cancelled.";
+                return;
+            }
+            if (!file.FileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+            {
+                _sessionCoverageLabel.Text = "Session-policy evidence must be a QuantForge JSON document.";
+                return;
+            }
+
+            using var stream = await file.OpenReadAsync();
+            cancellation.CancelAfter(TimeSpan.FromSeconds(30));
+            var inspected = await SessionCoverageEvidenceReader.InspectAsync(stream, cancellation.Token);
+            cancellation.Token.ThrowIfCancellationRequested();
+            if (inspected.Status != SessionCoverageEvidenceStatus.Inspected || inspected.Evidence is not { } evidence)
+            {
+                _sessionCoverageLabel.Text = $"Session-policy evidence unavailable: {inspected.DiagnosticCode}. No coverage authority recorded.";
+                return;
+            }
+
+            var entries = _marketAdmissionWorkflow.LoadEntries();
+            var entryMatches = entries.Where(x =>
+                string.Equals(x.DatasetId, evidence.DatasetId, StringComparison.Ordinal) &&
+                string.Equals(x.DatasetFingerprint, evidence.DatasetFingerprint, StringComparison.Ordinal)).ToArray();
+            if (entryMatches.Length != 1)
+            {
+                _sessionCoverageLabel.Text = "Session-policy evidence does not identify exactly one admitted local dataset. No coverage authority recorded.";
+                return;
+            }
+
+            var fileMatches = batch.Files.Where(x =>
+                x.State == MarketFileState.Inspected &&
+                x.Data?.Kind == MarketTextKind.Minute &&
+                string.Equals(x.Data?.Hash, evidence.DatasetFingerprint, StringComparison.Ordinal)).ToArray();
+            if (fileMatches.Length != 1)
+            {
+                _sessionCoverageLabel.Text = "The exact admitted minute bytes are not uniquely present in the current inspected batch. Re-inspect the admitted source before coverage analysis.";
+                return;
+            }
+
+            var report = SessionCoveragePreparation.Analyze(entryMatches[0], fileMatches[0], evidence);
+            if (report.ResearchAdmissible)
+            {
+                var artifact = SessionCoverageArtifactRules.Create(report);
+                _sessionCoverageStore.Save(artifact);
+                var readiness = ResearchReadinessRules.Evaluate(entryMatches[0], artifact);
+                _sessionCoverageLabel.Text =
+                    $"Session coverage recomputed and persisted | authoritative: {report.Authoritative} | expected: {report.ExpectedMinuteCount} | " +
+                    $"observed in-session: {report.ObservedInSessionMinuteCount} | missing: {report.MissingMinuteCount} | outside-session: {report.OutsideSessionMinuteCount} | " +
+                    $"policy SHA-256 {report.PolicyFingerprint} | coverage artifact SHA-256 {artifact.ArtifactFingerprint}. " + readiness.Limitation;
+                _admissionReadinessLabel.Text =
+                    $"Dataset {readiness.DatasetId}: catalog admitted + authoritative session evidence stored. Remaining research gates: strategy admission, reliability, and workflow execution.";
+            }
+            else
+            {
+                _sessionCoverageLabel.Text =
+                    $"Session coverage recomputed | authoritative: {report.Authoritative} | expected: {report.ExpectedMinuteCount} | " +
+                    $"observed in-session: {report.ObservedInSessionMinuteCount} | missing: {report.MissingMinuteCount} | outside-session: {report.OutsideSessionMinuteCount} | " +
+                    $"policy SHA-256 {report.PolicyFingerprint}. Coverage does not satisfy the research session gate. No coverage artifact persisted and no research authority granted.";
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            _sessionCoverageLabel.Text = "Session coverage inspection cancelled. No coverage authority recorded.";
+        }
+        catch (Exception error) when (error is not OutOfMemoryException)
+        {
+            _sessionCoverageLabel.Text = "Session coverage evidence or exact-byte binding failed validation. No coverage authority recorded.";
+        }
+        finally
+        {
+            EndInspection();
+        }
     }
 
     private async Task InspectManifestAsync()
@@ -257,6 +533,7 @@ public sealed class MainPage : ContentPage
             AppDiagnostics.Record(DiagnosticAction.DataInspection, result.Status switch { MarketDataInspectionStatus.Inspected => DiagnosticOutcome.Completed, MarketDataInspectionStatus.Unavailable => DiagnosticOutcome.Unavailable, MarketDataInspectionStatus.Cancelled => DiagnosticOutcome.Cancelled, _ => DiagnosticOutcome.Invalid }, actionClock.ElapsedMilliseconds);
             AppDiagnostics.Record(DiagnosticAction.InspectionReason, ImportInspectionFeedback.Classify(result.DiagnosticCode));
             _inspectedData = result.Status == MarketDataInspectionStatus.Inspected ? result : null;
+            _androidTestPanel.Record(AndroidTestMilestone.MinuteInspection, result.Status == MarketDataInspectionStatus.Inspected);
             _dataLabel.Text = result.Bars is { Count: > 0 } bars
                 ? $"Inspected {bars.Count} bars | Declared: {descriptor.Instrument}, {descriptor.PriceSeries} | UTC end stamps {bars[0].Timestamp:u} to {bars[^1].Timestamp:u} | Non-contiguous intervals: {result.NonContiguousIntervals} (not classified as missing data) | SHA-256: {result.SourceFingerprint}. Filename matches the declaration only. Contents identity, session coverage and benchmark remain unverified; research disabled."
                 : $"{ImportInspectionFeedback.Describe(result.DiagnosticCode)} | {result.DiagnosticCode} | line {result.ErrorLine}. No data admitted.";
@@ -315,6 +592,7 @@ public sealed class MainPage : ContentPage
             cancellation.Token.ThrowIfCancellationRequested();
             AppDiagnostics.Record(DiagnosticAction.ComparisonProcessing, DiagnosticOutcome.Observed, processingClock.ElapsedMilliseconds);
             AppDiagnostics.Record(DiagnosticAction.SourceComparison, result.Status switch { MinuteComparisonStatus.Compared => DiagnosticOutcome.Completed, MinuteComparisonStatus.Cancelled => DiagnosticOutcome.Cancelled, _ => DiagnosticOutcome.Invalid }, actionClock.ElapsedMilliseconds);
+            _androidTestPanel.Record(AndroidTestMilestone.SourceComparison, result.Status == MinuteComparisonStatus.Compared);
             _comparisonLabel.Text = result.Status == MinuteComparisonStatus.Compared
                 ? $"Source agreement: {result.MatchingBars} matching, {result.ConflictingBars} differing, {result.PrimaryOnlyBars} only in primary, {result.ReferenceOnlyBars} only in reference. Same source bytes: {result.SameSourceBytes}. Primary SHA-256: {result.PrimaryFingerprint} | Reference SHA-256: {result.ReferenceFingerprint}. File labels match the declaration only. Full observed ranges compared; neither source identity, session coverage nor independence is verified. Research remains disabled."
                 : $"Comparison unavailable: {result.DiagnosticCode}; reference inspection: {reference.DiagnosticCode}. Correct the reference and retry. Research remains disabled.";
@@ -330,6 +608,7 @@ public sealed class MainPage : ContentPage
         _inspectionCancellation = new CancellationTokenSource();
         _batchButton.IsEnabled = _utcDayComparison.IsEnabled = _clearBatchButton.IsEnabled = false;
         _inspectDataButton.IsEnabled = _inspectManifestButton.IsEnabled = false;
+        _inspectAdmissionEvidenceButton.IsEnabled = false;
         _cancelInspectionButton.IsEnabled = true;
         _compareDataButton.IsEnabled = _clearDataButton.IsEnabled = false;
         return _inspectionCancellation;
@@ -341,6 +620,7 @@ public sealed class MainPage : ContentPage
         _batchButton.IsEnabled = _utcDayComparison.IsEnabled = true;
         _clearBatchButton.IsEnabled = _batch is not null;
         _inspectDataButton.IsEnabled = _inspectManifestButton.IsEnabled = true;
+        _inspectAdmissionEvidenceButton.IsEnabled = _batch is not null;
         _cancelInspectionButton.IsEnabled = false;
         _compareDataButton.IsEnabled = _clearDataButton.IsEnabled = _inspectedData is not null;
     }

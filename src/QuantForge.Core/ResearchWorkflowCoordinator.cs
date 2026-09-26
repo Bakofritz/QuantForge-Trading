@@ -3,6 +3,7 @@ namespace QuantForge.Core;
 public sealed record ResearchWorkflowRequest(
     ResearchBatchRequest Batch,
     IReadOnlyList<DataReliabilityAssessment> Reliability,
+    IReadOnlyList<SessionCoverageReport>? SessionCoverage = null,
     IReadOnlyList<ResearchTimeframeContext>? TimeframeContexts = null);
 
 public sealed record ResearchWorkflowResult(
@@ -28,6 +29,16 @@ public static class ResearchWorkflowCoordinator
             DataReliabilityRules.Validate(assessment);
             if (!reliabilityByDataset.TryAdd(assessment.DatasetFingerprint, assessment))
                 throw new InvalidOperationException("A research workflow cannot contain duplicate reliability assessments for one dataset.");
+        }
+
+        var coverageByDataset = new Dictionary<string, SessionCoverageReport>(StringComparer.Ordinal);
+        if (request.SessionCoverage is not null)
+        {
+            foreach (var coverage in request.SessionCoverage)
+            {
+                if (!coverageByDataset.TryAdd(coverage.DatasetFingerprint, coverage))
+                    throw new InvalidOperationException("A research workflow cannot contain duplicate session coverage reports for one dataset.");
+            }
         }
 
         var timeframeByJob = new Dictionary<string, ResearchTimeframeContext>(StringComparer.Ordinal);
@@ -65,6 +76,11 @@ public static class ResearchWorkflowCoordinator
             {
                 report = Invalid(identity, $"Multi-timeframe causal validation failed: {timeframeReason}");
             }
+            else if (request.SessionCoverage is not null &&
+                     (!coverageByDataset.TryGetValue(identity.DatasetFingerprint, out var coverage) || !coverage.ResearchAdmissible))
+            {
+                report = DataBlocked(identity, "Authoritative session coverage is incomplete or unavailable for the admitted dataset.");
+            }
             else if (!reliabilityByDataset.TryGetValue(identity.DatasetFingerprint, out var reliability))
             {
                 report = DataBlocked(identity, "No data reliability assessment exists for the admitted dataset.");
@@ -79,8 +95,7 @@ public static class ResearchWorkflowCoordinator
             {
                 try
                 {
-                    report = ReadOnlyResearchOrchestrator.Run(
-                        new ResearchBatchRequest(request.Batch.Mode, new[] { run }))[0];
+                    report = ResearchResultPipeline.Run(run).Report;
                 }
                 catch (InvalidOperationException ex)
                 {

@@ -1,0 +1,1 @@
+using QuantForge.Core;namespace QuantForge.Core.ArchitectureTests;public sealed class AndroidStrategySelectionTests{[Fact]public void Selection_binds_admitted_strategy(){var a=TestFixtures.Gates().Strategy;var s=AndroidStrategySelectionRules.Create(a);AndroidStrategySelectionRules.Validate(s,a);}}

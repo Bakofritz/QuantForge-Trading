@@ -9,10 +9,10 @@
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <ApplicationTitle>QuantForge Test</ApplicationTitle>
     <ApplicationId>com.quantforge.diagnostic</ApplicationId>
-    <ApplicationDisplayVersion>0.30.10</ApplicationDisplayVersion>
-    <ApplicationVersion>3010</ApplicationVersion>
+    <ApplicationDisplayVersion>0.30.91</ApplicationDisplayVersion>
+    <ApplicationVersion>3091</ApplicationVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
-    <InformationalVersion>0.30.10-diagnostic+$(SourceRevisionId)</InformationalVersion>
+    <InformationalVersion>0.30.84-automellon+$(SourceRevisionId)</InformationalVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">

@@ -16,7 +16,7 @@ public enum DiagnosticAction
     MemorySample, ExportRequested, FileLabelCheck, ManifestProcessing, DataProcessing, ComparisonProcessing, InspectionReason, FileLabelDetected, BatchInspection, BatchProcessing, CrossValidation
 }
 public enum DiagnosticOutcome { Observed, Started, Completed, Cancelled, Invalid, Unavailable, FileTooLarge, TooManyBars, WrongFileType, InvalidFormat, InvalidValues, InvalidOrder, EmptyFile, InvalidEncoding, InvalidFileLabel }
-public sealed record DiagnosticEnvironment(string Build, string Model, string Manufacturer,
+public sealed record DiagnosticEnvironment(string Build, string AppVersion, string AppBuildCode, string Model, string Manufacturer,
     string OperatingSystem, double ScreenWidth, double ScreenHeight, double Density);
 public sealed record DiagnosticEvent(long Sequence, DateTimeOffset Utc, long ElapsedMilliseconds,
     DiagnosticAction Action, DiagnosticOutcome Outcome, long DurationMilliseconds,
@@ -41,7 +41,7 @@ public sealed class DiagnosticJournal
     // Directory must be the adapter's fixed private diagnostic folder, never an imported path.
     public DiagnosticJournal(string directory, DiagnosticEnvironment environment)
     {
-        if (new[] { environment.Build, environment.Model, environment.Manufacturer, environment.OperatingSystem }
+        if (new[] { environment.Build, environment.AppVersion, environment.AppBuildCode, environment.Model, environment.Manufacturer, environment.OperatingSystem }
             .Any(value => string.IsNullOrWhiteSpace(value) || value.Length > 128))
             throw new ArgumentException("Invalid diagnostic environment.");
         Directory.CreateDirectory(directory);
@@ -101,7 +101,7 @@ public sealed class DiagnosticJournal
         await _writer;
     }
 
-    public static async Task ExportAsync(string directory, string destination)
+    public static async Task ExportAsync(string directory, string destination, string? androidAcceptanceSnapshot = null)
     {
         // Caller stops recording before export. Read only these fixed diagnostic files.
         var eventPath = Path.Combine(directory, "events.jsonl");
@@ -123,8 +123,19 @@ public sealed class DiagnosticJournal
             catch (JsonException) { incompleteLines++; }
         }
         var interrupted = !events.Any(item => item.Action == DiagnosticAction.SessionStopped);
+        AndroidAcceptanceSnapshot? acceptance = null;
+        if (!string.IsNullOrWhiteSpace(androidAcceptanceSnapshot))
+        {
+            if (!AndroidAcceptanceSnapshot.TryParse(androidAcceptanceSnapshot, out acceptance) || acceptance is null ||
+                !string.Equals(acceptance.Platform, "Android", StringComparison.Ordinal) ||
+                !string.Equals(acceptance.Version, environment.AppVersion, StringComparison.Ordinal) ||
+                !string.Equals(acceptance.Build, environment.AppBuildCode, StringComparison.Ordinal) ||
+                !string.Equals(acceptance.OperatingSystem, environment.OperatingSystem, StringComparison.Ordinal))
+                throw new InvalidOperationException("Android acceptance evidence does not match the diagnostic environment.");
+        }
         var manifest = new DiagnosticExportManifest(1, environment, DateTimeOffset.UtcNow,
             events.Count, incompleteLines, interrupted, Convert.ToHexString(SHA256.HashData(eventBytes)),
+            acceptance?.Fingerprint,
             "App-only best-effort diagnostics. No guarantee of capturing fatal crashes, ANRs, final buffered events, CPU/battery or complete startup metrics. Not research evidence.");
         using var archive = ZipFile.Open(destination, ZipArchiveMode.Create);
         async Task Add(string name, string text)
@@ -135,10 +146,12 @@ public sealed class DiagnosticJournal
         }
         await Add("manifest.json", JsonSerializer.Serialize(manifest, DiagnosticJsonContext.Default.DiagnosticExportManifest));
         await Add("events.jsonl", Encoding.UTF8.GetString(eventBytes));
+        if (acceptance is not null)
+            await Add("android-acceptance.txt", acceptance.Serialize());
         var statusPath = Path.Combine(directory, "status.json");
         if (File.Exists(statusPath) && new FileInfo(statusPath).Length <= 4096)
             await Add("recorder-status.json", await File.ReadAllTextAsync(statusPath));
-        await Add("summary.txt", $"QuantForge diagnostic test session\nBuild: {environment.Build}\nDevice: {environment.Manufacturer} {environment.Model}\nEvents: {events.Count}\nInterrupted or stop event unavailable: {interrupted}\nIncomplete lines: {incompleteLines}\n" +
+        await Add("summary.txt", $"QuantForge diagnostic test session\nBuild: {environment.Build}\nApp version: {environment.AppVersion} ({environment.AppBuildCode})\nDevice: {environment.Manufacturer} {environment.Model}\nEvents: {events.Count}\nInterrupted or stop event unavailable: {interrupted}\nIncomplete lines: {incompleteLines}\nAndroid acceptance snapshot: {(acceptance is null ? "not included" : acceptance.Fingerprint)}\n" +
             string.Join("\n", events.GroupBy(e => e.Action).Select(g => $"{g.Key}: {g.Count()}")) +
             "\nOnly manually entered problem notes may contain free text. No automatic upload. No trading authority.\n");
     }
@@ -148,7 +161,7 @@ public sealed class DiagnosticJournal
 internal sealed record DiagnosticRecorderStatus(long DroppedEvents, bool StorageFailed);
 internal sealed record DiagnosticExportManifest(int SchemaVersion, DiagnosticEnvironment Environment,
     DateTimeOffset ExportedUtc, int EventCount, int IncompleteLines, bool Interrupted,
-    string EventSha256, string Limitation);
+    string EventSha256, string? AndroidAcceptanceFingerprint, string Limitation);
 
 [JsonSourceGenerationOptions(UseStringEnumConverter = true)]
 [JsonSerializable(typeof(DiagnosticEnvironment))]

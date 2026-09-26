@@ -1,0 +1,1 @@
+using QuantForge.Core;namespace QuantForge.Core.ArchitectureTests;public sealed class AndroidResearchReadinessCardTests{[Fact]public void Complete_gates_are_ready_without_order_authority(){var c=AndroidResearchReadinessCardRules.Create(TestFixtures.Gates());Assert.True(c.Ready);Assert.False(c.CanSubmitOrders);}}

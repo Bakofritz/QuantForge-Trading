@@ -10,6 +10,16 @@ public sealed class ProductApplicationCoordinator
         return ProductApplicationViewModelRules.Create(workflowState, activeSection);
     }
 
+    public ProductApplicationViewModel PresentWorkflowResult(
+        ResearchWorkflowResult result,
+        ResearchBatchMode mode,
+        ProductWorkspaceSection activeSection)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        var summary = ResearchWorkflowSummaryFactory.Create(mode, result);
+        return Present(summary, activeSection);
+    }
+
     public ResearchAuthorityDecision ValidateCommand(
         ProductApplicationViewModel state,
         ProductUiCommand command)

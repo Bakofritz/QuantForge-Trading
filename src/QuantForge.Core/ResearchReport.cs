@@ -17,7 +17,8 @@ public readonly record struct ResearchReport(
     string TemporalPartition,
     string? BlockReason,
     AccountSnapshot? Account,
-    EvidenceRecord? EvidenceTail);
+    EvidenceRecord? EvidenceTail,
+    ResearchExecutionTrace? ExecutionTrace = null);
 
 public static class ResearchReportRules
 {

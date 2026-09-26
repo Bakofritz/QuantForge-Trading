@@ -24,27 +24,37 @@ internal sealed class DiagnosticPanel : ContentView
     private readonly Button _mark = new() { Text = "Mark problem" };
     private readonly Button _export = new() { Text = "Export diagnostics ZIP" };
     private readonly Button _clear = new() { Text = "Clear diagnostics" };
-    private readonly Entry _note = new() { Placeholder = "Optional problem note (included in export)", MaxLength = 500 };
+    private readonly Editor _expected = new() { Placeholder = "Expected behavior (optional)", MaxLength = DiagnosticProblemNote.MaximumFieldLength, AutoSize = EditorAutoSizeOption.TextChanges };
+    private readonly Editor _actual = new() { Placeholder = "Actual behavior (optional)", MaxLength = DiagnosticProblemNote.MaximumFieldLength, AutoSize = EditorAutoSizeOption.TextChanges };
+    private readonly Func<string?>? _acceptanceSnapshotProvider;
     private bool _busy;
 
-    internal DiagnosticPanel()
+    internal DiagnosticPanel(Func<string?>? acceptanceSnapshotProvider = null)
     {
+        _acceptanceSnapshotProvider = acceptanceSnapshotProvider;
         Content = new VerticalStackLayout
         {
             Spacing = 6, Children =
             {
                 new Label { Text = $"DIAGNOSTIC TEST BUILD {AppInfo.Current.VersionString} - simulation only", FontAttributes = FontAttributes.Bold },
-                new Label { Text = "Available: batch TXT/ZIP minute/day/tick inspection, source comparison, clear and cancel. Full backtests and sunflower menus are not implemented. Recording collects app action names, UTC times, durations, managed-memory samples and device/OS/display details. No file names, file contents, passwords, typed contract labels or device identifiers are logged. Your optional problem notes are included." },
-                _status, _start, _stop, _note, _mark, _export, _clear
+                new Label { Text = "Available: batch TXT/ZIP minute/day/tick inspection, source comparison, clear and cancel. Full backtests and sunflower menus are not implemented. Recording collects app action names, UTC times, durations, managed-memory samples and device/OS/display details. Android exports also include the build-bound test-progress snapshot. No file names, file contents, passwords, typed contract labels or device identifiers are logged. Your optional problem notes are included." },
+                _status, _start, _stop, _expected, _actual, _mark, _export, _clear
             }
         };
         _start.Clicked += async (_, _) => await RunAsync(StartAsync);
         _stop.Clicked += async (_, _) => await RunAsync(StopAsync);
         _mark.Clicked += (_, _) =>
         {
-            var queued = AppDiagnostics.Current?.Record(DiagnosticAction.ProblemMarked, userNote: _note.Text) == true;
-            _note.Text = string.Empty;
-            _status.Text = queued ? "Problem marker queued locally. Continue testing or export." : "Marker could not be queued; recording is stopped, full or unavailable.";
+            string note;
+            try { note = DiagnosticProblemNote.Compose(_expected.Text, _actual.Text); }
+            catch (ArgumentException)
+            {
+                _status.Text = "Enter expected behavior, actual behavior, or both before marking a problem.";
+                return;
+            }
+            var queued = AppDiagnostics.Current?.Record(DiagnosticAction.ProblemMarked, userNote: note) == true;
+            if (queued) { _expected.Text = string.Empty; _actual.Text = string.Empty; }
+            _status.Text = queued ? "Expected/actual problem marker queued locally. Continue testing or export." : "Marker could not be queued; recording is stopped, full or unavailable.";
         };
         _export.Clicked += async (_, _) => await RunAsync(ExportAsync);
         _clear.Clicked += async (_, _) => await RunAsync(ClearAsync);
@@ -76,8 +86,9 @@ internal sealed class DiagnosticPanel : ContentView
         if (AppDiagnostics.Current is not null) return;
         var display = DeviceDisplay.Current.MainDisplayInfo;
         var build = typeof(App).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "unknown";
-        var environment = new DiagnosticEnvironment(build, DeviceInfo.Current.Model, DeviceInfo.Current.Manufacturer,
-            DeviceInfo.Current.VersionString, display.Width, display.Height, display.Density);
+        var environment = new DiagnosticEnvironment(build, AppInfo.Current.VersionString, AppInfo.Current.BuildString,
+            DeviceInfo.Current.Model, DeviceInfo.Current.Manufacturer, DeviceInfo.Current.VersionString,
+            display.Width, display.Height, display.Density);
         var directory = AppDiagnostics.DirectoryPath;
         AppDiagnostics.Current = await Task.Run(() =>
         {
@@ -105,7 +116,8 @@ internal sealed class DiagnosticPanel : ContentView
         Directory.CreateDirectory(root);
         var output = Path.Combine(root, "QuantForge-diagnostics.zip");
         if (File.Exists(output)) File.Delete(output);
-        await Task.Run(() => DiagnosticJournal.ExportAsync(AppDiagnostics.DirectoryPath, output));
+        var acceptanceSnapshot = _acceptanceSnapshotProvider?.Invoke();
+        await Task.Run(() => DiagnosticJournal.ExportAsync(AppDiagnostics.DirectoryPath, output, acceptanceSnapshot));
         await Share.Default.RequestAsync(new ShareFileRequest
         { Title = "Export QuantForge diagnostics", File = new ShareFile(output, "application/zip") });
         _status.Text = "ZIP prepared. Choose where to save/share, then attach it in this chat. Opening the share sheet does not confirm upload.";
@@ -118,7 +130,8 @@ internal sealed class DiagnosticPanel : ContentView
         await Task.Run(() => { if (Directory.Exists(directory)) Directory.Delete(directory, true); });
         var export = Path.Combine(FileSystem.CacheDirectory, "sharing-root", "QuantForge-diagnostics.zip");
         if (File.Exists(export)) File.Delete(export);
-        _note.Text = string.Empty;
+        _expected.Text = string.Empty;
+        _actual.Text = string.Empty;
         _status.Text = "Diagnostics cleared on this device. Previously shared copies are not deleted.";
     }
 
@@ -126,7 +139,7 @@ internal sealed class DiagnosticPanel : ContentView
     {
         var recording = AppDiagnostics.Current is not null;
         _start.IsEnabled = !_busy && !recording;
-        _stop.IsEnabled = _mark.IsEnabled = _note.IsEnabled = !_busy && recording;
+        _stop.IsEnabled = _mark.IsEnabled = _expected.IsEnabled = _actual.IsEnabled = !_busy && recording;
         _export.IsEnabled = !_busy && (recording || File.Exists(Path.Combine(AppDiagnostics.DirectoryPath, "events.jsonl")));
         _clear.IsEnabled = !_busy;
         if (!recording && !_busy && _export.IsEnabled && _status.Text.StartsWith("Diagnostics OFF", StringComparison.Ordinal))

@@ -1,0 +1,1 @@
+using QuantForge.Core;namespace QuantForge.Core.ArchitectureTests;public sealed class AndroidResearchExportIndexTests{[Fact]public void Export_index_is_deterministic(){var i=new[]{new AndroidResearchExportItem("report","r.json","A",1)};Assert.Equal(AndroidResearchExportIndexRules.Create("j",i),AndroidResearchExportIndexRules.Create("j",i));}}

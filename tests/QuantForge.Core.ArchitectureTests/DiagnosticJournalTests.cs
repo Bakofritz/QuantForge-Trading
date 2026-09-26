@@ -5,7 +5,7 @@ namespace QuantForge.Core.ArchitectureTests;
 
 public sealed class DiagnosticJournalTests
 {
-    private static DiagnosticEnvironment EnvironmentInfo => new("test-build", "test-model", "test-maker", "test-os", 1080, 2400, 3);
+    private static DiagnosticEnvironment EnvironmentInfo => new("test-build", "0.30.33", "3033", "test-model", "test-maker", "16", 1080, 2400, 3);
 
     [Fact]
     public async Task ExportContainsOnlyFixedFilesAndExplicitUserNotes()
@@ -75,4 +75,45 @@ public sealed class DiagnosticJournalTests
         }
         finally { Directory.Delete(dir, true); }
     }
+    [Fact]
+    public async Task ExportCanEmbedBuildBoundAndroidAcceptanceEvidence()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        try
+        {
+            var journal = new DiagnosticJournal(dir, EnvironmentInfo);
+            await journal.StopAsync();
+            var tracker = new AndroidAcceptanceTracker();
+            tracker.Record(AndroidTestMilestone.MixedBatchInspection, true);
+            var identity = new AndroidBuildIdentity("0.30.33", "3033", "Android", "16");
+            var snapshot = AndroidAcceptanceSnapshot.Create(identity, tracker.States);
+            var zip = Path.Combine(dir, "export.zip");
+
+            await DiagnosticJournal.ExportAsync(dir, zip, snapshot.Serialize());
+
+            using var archive = ZipFile.OpenRead(zip);
+            Assert.NotNull(archive.GetEntry("android-acceptance.txt"));
+            using var manifestReader = new StreamReader(archive.GetEntry("manifest.json")!.Open());
+            using var manifest = JsonDocument.Parse(await manifestReader.ReadToEndAsync());
+            Assert.Equal(snapshot.Fingerprint, manifest.RootElement.GetProperty("AndroidAcceptanceFingerprint").GetString());
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
+    [Fact]
+    public async Task ExportRejectsAcceptanceEvidenceFromDifferentBuild()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        try
+        {
+            var journal = new DiagnosticJournal(dir, EnvironmentInfo);
+            await journal.StopAsync();
+            var tracker = new AndroidAcceptanceTracker();
+            var snapshot = AndroidAcceptanceSnapshot.Create(new AndroidBuildIdentity("0.30.33", "9999", "Android", "16"), tracker.States);
+            var zip = Path.Combine(dir, "export.zip");
+            await Assert.ThrowsAsync<InvalidOperationException>(() => DiagnosticJournal.ExportAsync(dir, zip, snapshot.Serialize()));
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
 }

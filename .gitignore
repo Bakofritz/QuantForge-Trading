@@ -12,3 +12,6 @@ artifacts/tmp/
 *.sqlite3
 secrets/
 .env
+
+__pycache__/
+*.pyc

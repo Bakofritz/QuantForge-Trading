@@ -1,0 +1,1 @@
+using QuantForge.Core;namespace QuantForge.Core.ArchitectureTests;public sealed class AndroidDatasetSelectionFileStoreTests{[Fact]public void Selection_round_trips(){var v=AndroidDatasetSelectionRules.Create(TestFixtures.Gates().Dataset);var p=Path.GetTempFileName();try{var s=new AndroidDatasetSelectionFileStore(p);s.Save(v);Assert.Equal(v,s.Load());}finally{File.Delete(p);}}}

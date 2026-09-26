@@ -1,0 +1,3 @@
+using System.Text;using System.Text.Json;
+namespace QuantForge.Core;
+public sealed class NativeBuildEvidenceFileStore{private readonly string _path;public NativeBuildEvidenceFileStore(string path)=>_path=Path.GetFullPath(path);public void Save(NativeBuildEvidence value){NativeBuildEvidenceRules.Validate(value);Directory.CreateDirectory(Path.GetDirectoryName(_path)!);File.WriteAllText(_path,JsonSerializer.Serialize(value,new JsonSerializerOptions{WriteIndented=true}),new UTF8Encoding(false));}public NativeBuildEvidence Load(){var v=JsonSerializer.Deserialize<NativeBuildEvidence>(File.ReadAllText(_path))??throw new InvalidOperationException("Native build evidence JSON is invalid.");NativeBuildEvidenceRules.Validate(v);return v;}}

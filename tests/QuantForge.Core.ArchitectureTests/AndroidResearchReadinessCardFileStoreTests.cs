@@ -1,0 +1,1 @@
+using QuantForge.Core;namespace QuantForge.Core.ArchitectureTests;public sealed class AndroidResearchReadinessCardFileStoreTests{[Fact]public void Card_round_trips(){var v=AndroidResearchReadinessCardRules.Create(TestFixtures.Gates());var p=Path.GetTempFileName();try{var s=new AndroidResearchReadinessCardFileStore(p);s.Save(v);Assert.Equal(v,s.Load());}finally{File.Delete(p);}}}

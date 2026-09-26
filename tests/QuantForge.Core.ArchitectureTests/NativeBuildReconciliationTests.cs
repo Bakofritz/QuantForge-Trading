@@ -1,0 +1,1 @@
+using QuantForge.Core;namespace QuantForge.Core.ArchitectureTests;public sealed class NativeBuildReconciliationTests{[Fact]public void Exact_build_matches_expectation(){var a=NativeBuildEvidenceRules.Create("android","c","t","1","1","app.apk","ABC",1,0,0,true,false);Assert.True(NativeBuildReconciliationRules.Compare(new("c","t","1","1","android"),a).Matches);}}

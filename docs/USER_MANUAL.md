@@ -385,3 +385,86 @@ Files modified: src/QuantForge.App/MainPage.cs; docs/MASTER_BUILD.md; docs/MELLO
 v30.10a source 970c8a6c5109dde7a890d4e8502fb79d5d4ba964 is FAILED / NON-STABLE: PR run 36223880051 passed static and 235 core plus 23 reflection-disabled checks, then Android exposed CS8602 at MainPage.cs:129 because MAUI annotates picker entries as nullable. The Switch ambiguity is resolved. Windows validation was still running when this correction was prepared; no success is inferred. No APK was delivered.
 
 v30.10b checks each entry and rejects the batch through the existing unavailable-provider path before constructing a stream source if an entry is null. It does not silently discard entries or publish partial results. Same authorized Phase 5 scope, branch and app version 0.30.10/code3010; new source SHA distinguishes the correction. Modified the same five files as v30.10a; no new/deleted files. Commit: v30.10b: reject nullable picker entries before batch source creation. Exact-head native/core/static/package validation pending; v30.09 remains the latest fully validated diagnostic baseline. Progress estimate stays 38% for Phase 5; device validation and end-to-end research remain unfinished. Main merge/stable promotion/live authority unchanged and unapproved. No new approval queue.
+
+## v30.12b publication artifacts
+Complete research runs can be assembled into deterministic publication artifacts. The artifact binds the job, dataset, evidence and execution-trace fingerprints to exported chart and ledger data. Incomplete or data-blocked runs cannot be published or retained in the result archive.
+
+## v30.13 workflow packages and local result storage
+A workflow package binds its research summary to the complete publication artifacts produced by the workflow. Validated publications may be persisted locally by artifact fingerprint. The store uses a manifest collision check and atomic directory publication; blocked or invalid research cannot be persisted as a publication.
+
+## v30.14 end-to-end coordination and catalog persistence
+End-to-end research requires both a catalog-admitted dataset and an admitted sanitized strategy envelope. Dataset catalog entries can be persisted and reloaded locally; reload does not weaken the existing admission rules.
+
+## Optimization result review and recovery (v30.24)
+
+Optimization results are read-only research artifacts. A completed optimization result is shown only after its deterministic selection is revalidated against all completed variants. The application may display final simulated equity and realized P&L for the evaluated variants, but it cannot submit orders, obtain live-account authority, or modify application settings from an optimization result.
+
+Persisted optimization results use paired JSON and text representations. Recovery verifies the storage key, read-only authority flags, variant identities, selection consistency, and agreement between both representations. Missing, incomplete, or tampered result storage is rejected rather than partially recovered.
+
+## Walk-forward research (v30.25)
+
+Walk-forward research is represented as explicit temporal segments. Each segment declares a training window followed by a non-overlapping evaluation window. Optimization inputs are restricted to the training window. After deterministic selection, the out-of-sample evaluation must use the selected strategy and parameter fingerprints unchanged. Evaluation is still subject to dataset catalog admission, research-safe strategy admission, data reliability, and authoritative session coverage.
+
+QuantForge does not use future evaluation observations to select the training winner. A segment whose optimization cannot produce a complete selection, or whose evaluation cannot complete, blocks the walk-forward result rather than filling or inferring missing performance.
+
+## Walk-forward result review and recovery (v30.26)
+
+Completed walk-forward runs can be presented as read-only segment results showing the selected training job and the later out-of-sample evaluation state. QuantForge verifies the segment fingerprints and the whole walk-forward result fingerprint before exposing those results.
+
+Walk-forward outcomes may be persisted as paired JSON and Markdown artifacts. On recovery, both representations must agree and all nested optimization/research invariants are rechecked. Tampered or incomplete storage is rejected rather than partially trusted.
+
+## Walk-forward application workflow (v30.27)
+
+The application can run a validated walk-forward plan, persist the resulting evidence, and present the resulting state through one read-only workflow. Recovery performs the same integrity checks before presentation. If persisted evidence later fails validation, the presentation session clears its prior snapshot and reports a stable rejected diagnostic rather than continuing to display stale results.
+
+## Android admission-readiness view (v30.34)
+
+After a mixed TXT/ZIP batch inspection completes, QuantForge now shows an **Admission readiness** section for each inspected source. This section is explanatory only. It tells you whether the source is blocked or which independently trusted evidence is still required, such as an external dataset ID, independent instrument/timeframe identity, immutable provenance, or conflict resolution.
+
+A source shown as **Ready** is only ready to enter the existing admission-request pipeline. It is not automatically admitted, it does not prove exchange-session completeness, and it does not enable research or live trading. Filename labels, matching prices, and cross-source agreement remain descriptive evidence rather than trusted provenance.
+
+## External admission evidence on Android (v30.35)
+
+After a mixed batch has completed, use **Check external admission evidence JSON** to inspect a QuantForge admission-evidence document. The document must independently provide the dataset ID, instrument identity, timeframe identity, and immutable provenance. QuantForge matches the evidence's sanitized-artifact fingerprint to exactly one admission-eligible inspected source and then runs the existing admission validation as a dry run.
+
+A successful message means **an admission request can be formed**. The screen does not write the dataset catalog or grant research authority. If the evidence fingerprint does not match the inspected bytes, the instrument conflicts with the descriptive filename label, the evidence is malformed/ambiguous, or no eligible source matches, the operation fails closed.
+
+## Registering a verified dataset on Android (v30.36)
+
+1. Run the mixed TXT/ZIP batch inspection.
+2. Use **Check external admission evidence JSON** and select independently prepared evidence whose sanitized-artifact SHA-256 matches exactly one admission-eligible inspected source.
+3. Review the dry-run result. If the evidence and inspected bytes agree, **Register verified dataset in local catalog** becomes available.
+4. Tap the registration button only when you intend to persist that exact dataset identity locally. QuantForge reruns the existing fail-closed admission checks before writing the catalog.
+5. Use **Show admitted datasets** to reload and review the local catalog.
+
+Registration does not authorize strategy execution or live trading. Research still requires the separate strategy, reliability, session-coverage and workflow gates. A filename, matching prices, or cross-source agreement never substitutes for independently supplied identity/provenance. If persistent catalog data fails validation, the catalog view rejects it rather than displaying partially trusted entries.
+
+## Authoritative session coverage on Android (v30.37)
+
+After admitting a minute dataset into the local catalog, keep or re-inspect the exact admitted market-data bytes in the current batch. Then use **Check authoritative session coverage JSON** and choose independently supplied session-policy evidence for that dataset.
+
+QuantForge requires the evidence dataset ID and SHA-256 to match exactly one validated catalog entry and exactly one current inspected minute source. The policy must contain explicit UTC session intervals, policy identity/version, provenance fingerprint, and `authoritative: true`. QuantForge recomputes coverage from the inspected bars and displays expected minutes, observed in-session minutes, missing minutes, outside-session minutes and a deterministic policy fingerprint.
+
+The evidence file does not carry a trusted `coveragePassed` outcome. Complete authoritative coverage satisfies only the session-coverage gate for those exact bytes. Research still requires the separate dataset, strategy, reliability and workflow gates, and live/order authority remains disabled.
+
+
+## Research evidence workspace (v30.44)
+
+The research pipeline now has explicit persisted evidence boundaries from admission through terminal outcomes. A research gate bundle combines one admitted dataset, authoritative complete session coverage, research-admissible reliability evidence, and one admitted research-safe strategy. A launch intent then binds that gate bundle to an exact research job identity before execution. Terminal reports can be persisted only as outcomes tied back to that launch identity.
+
+QuantForge can compare two terminal outcomes for the same admitted dataset side by side. This comparison is descriptive: it records identities, terminal status, and simulated equity difference only when both reports are complete. It does not declare a strategy winner and cannot promote a strategy to live authority.
+
+A canonical research workspace index can reference validated gate bundles, launch intents, outcomes and comparisons. The index is deterministically ordered and fingerprinted, rejects duplicates and unknown entry types, and is revalidated on load. It is an evidence-navigation layer, not an authority layer.
+
+## Android strategy drafting and research-session preview (v30.79b-v30.84a)
+
+QuantForge now persists the consolidated program-readiness report, supports canonical research-only strategy drafts with deterministically ordered parameters, reviews those drafts against already-admitted sanitized strategy evidence, and exposes the resulting readiness as an Android-facing strategy draft card. Drafts never gain order-submission authority. A mismatch between draft strategy identity and admitted strategy evidence remains blocked.
+
+A ready strategy draft can participate in a read-only Android launch preview only when the exact selected dataset, selected admitted strategy, and research-readiness evidence agree. The preview can prepare a simulation-only research run; it cannot submit orders. Android research session summaries bind the launch preview to queue state and, when available, the terminal result identities. Session summaries are fingerprinted and can be persisted/recovered without converting UI state into execution authority.
+
+The Android candidate version associated with this release line is 0.30.84 / code 3084. An APK must be built from this exact source revision before device testing; use the included GitHub build instructions.
+
+
+## v30.91b AutoMellon 15-iteration boundary
+
+Fifteen locally validated research-only iterations from v30.84b through v30.91b add deterministic Android research recovery/timeline/export evidence, strategy and launch guard summaries, run/outcome/comparison digests, workspace health, exact-source native validation request/receipt contracts, explicit native-evidence promotion gating, and self-verifying handoff/release-boundary evidence. App candidate 0.30.91/code3091. Static architecture and deterministic package-source gates pass. Native Android/Windows build and device validation remain external requirements; no stable promotion or live/order authority is implied.

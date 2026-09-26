@@ -394,3 +394,34 @@ Files modified: src/QuantForge.App/MainPage.cs; docs/MASTER_BUILD.md; docs/MELLO
 v30.10a source 970c8a6c5109dde7a890d4e8502fb79d5d4ba964 is FAILED / NON-STABLE: PR run 36223880051 passed static and 235 core plus 23 reflection-disabled checks, then Android exposed CS8602 at MainPage.cs:129 because MAUI annotates picker entries as nullable. The Switch ambiguity is resolved. Windows validation was still running when this correction was prepared; no success is inferred. No APK was delivered.
 
 v30.10b checks each entry and rejects the batch through the existing unavailable-provider path before constructing a stream source if an entry is null. It does not silently discard entries or publish partial results. Same authorized Phase 5 scope, branch and app version 0.30.10/code3010; new source SHA distinguishes the correction. Modified the same five files as v30.10a; no new/deleted files. Commit: v30.10b: reject nullable picker entries before batch source creation. Exact-head native/core/static/package validation pending; v30.09 remains the latest fully validated diagnostic baseline. Progress estimate stays 38% for Phase 5; device validation and end-to-end research remain unfinished. Main merge/stable promotion/live authority unchanged and unapproved. No new approval queue.
+
+### AutoMellon addendum through v30.24b
+Implementation-first autonomous cycles remain active. Optimization application presentation and persistent recovery must remain read-only, deterministic, fail-closed, and simulation-only. Persisted optimization state must be verified before application exposure; storage disagreement is not recoverable by inference.
+
+### AutoMellon addendum through v30.25b
+Walk-forward optimization must be causally partitioned. Training inputs may not contain evaluation-window events or intents. Selected strategy/parameter identity must be carried unchanged into the later evaluation run. Future evaluation performance must never participate in the earlier selection decision.
+
+### AutoMellon addendum through v30.26b
+Persisted walk-forward results are evidence artifacts, not execution authority. Revalidate nested optimization/research state and deterministic fingerprints before UI exposure. Any storage disagreement fails closed.
+
+### AutoMellon addendum through v30.27b
+Application walk-forward state must be derived from validated persisted evidence. Clear stale presentation state before recovery validation; a failed refresh must never leave old evidence looking current.
+
+### AutoMellon addendum through v30.36b
+Android dataset admission must remain an explicit two-step action: external evidence is first paired and validated against exact inspected bytes, then a separate user action may persist that immutable entry into the local catalog. Inspection alone never mutates admission state. Persistent catalog reload must revalidate entries and fail closed. Catalog admission does not grant strategy/research/live authority. Every exported build must include the exact-source GitHub Android/Windows build prompts and may include an APK only when it was compiled from that exact source identity.
+
+### AutoMellon addendum through v30.37b
+Authoritative session coverage may be supplied only as explicit policy evidence bound to an admitted dataset identity. Never trust an externally asserted coverage outcome. Recompute coverage from the exact inspected minute bytes, require dataset/catalog/source fingerprint agreement, and keep session coverage as one independent gate rather than a shortcut to research or live authority.
+
+
+## AutoMellon ten-iteration export cadence addendum
+When the owner requests a local-only multi-iteration run, preserve exact source, commit history, manifests and validation evidence locally and do not upload interim source packages until the requested iteration count is reached. At the export boundary, include exact-source packaging, GitHub Android/Windows build prompts, validation evidence, cumulative history, focused testing guidance and handoff material. Never substitute an older APK for the exact source iteration.
+
+
+### AutoMellon recurring 10-build handoff cadence
+The owner requested continuing AutoMellon work with an export every 10 builds. Intermediate iterations remain local; each tenth build must ship a complete handoff package containing exact source, source/package hashes, cumulative build/rules history, current state, startup instructions, guides 01-07, validation evidence, focused test guidance, GitHub Android/Windows build prompts, user manual PDF/Markdown, contribution reminders and next-chat handoff. Candidate/stable/native/device status must remain explicit. This cadence remains active until changed by the owner.
+
+
+## v30.91b AutoMellon 15-iteration boundary
+
+Fifteen locally validated research-only iterations from v30.84b through v30.91b add deterministic Android research recovery/timeline/export evidence, strategy and launch guard summaries, run/outcome/comparison digests, workspace health, exact-source native validation request/receipt contracts, explicit native-evidence promotion gating, and self-verifying handoff/release-boundary evidence. App candidate 0.30.91/code3091. Static architecture and deterministic package-source gates pass. Native Android/Windows build and device validation remain external requirements; no stable promotion or live/order authority is implied.

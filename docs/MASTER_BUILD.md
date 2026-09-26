@@ -1,3 +1,12 @@
+
+## v30.11a — local session-coverage pipeline increment
+
+- Added an explicit UTC `SessionCoveragePolicy`/`SessionCoverageReport` pipeline. Session intervals are caller-supplied and provenance-bound; QuantForge never infers an exchange calendar or timezone.
+- Coverage classifies expected minutes, observed in-session minutes, missing minutes, and outside-session observations. Only authoritative, complete coverage is research-admissible.
+- `ResearchWorkflowCoordinator` can now enforce supplied session coverage without changing legacy workflows that do not yet provide the new evidence.
+- Added regression coverage for complete admission, missing minutes, outside-session observations, non-authoritative policies, overlapping sessions, and workflow blocking.
+- No live authority, benchmark inference, forward information, or automatic gap filling was added.
+- Local .NET compilation remains unavailable in the current environment; static/package validation is required before calling this candidate stable.
 # QuantForge Master Build
 
 ## Operating rule
@@ -75,6 +84,26 @@ This repository is maintained as a cumulative master build. Iterations are incre
 - Local native compilation is not claimed.
 - This iteration does not add Android/Windows UI or platform publishing.
 - No trading performance claim is made by the deterministic runner tests; their assertions validate engine mechanics only.
+
+## v30.10c — Dataset Catalog / Admission Pipeline (local implementation candidate)
+- Baseline: v30.10b source package at validated candidate `0a0288593824686e075cc93bef6b1ab3f7408b8a`; source hashes were reverified before modification.
+- Added `DatasetCatalogEntry` and `DatasetCatalog` to bind dataset ID, exact dataset fingerprint, instrument/timeframe/range, structural-validation result, immutable provenance, and inspection fingerprint.
+- Catalog registration is fail-closed: incomplete identity, invalid ranges, failed structural validation, incomplete provenance, provenance-fingerprint mismatch, or inspection-fingerprint mismatch cannot enter the catalog.
+- Re-registering the exact immutable entry is idempotent; conflicting identity under an existing dataset ID is rejected.
+- `RequireAdmission` produces the existing `DataAdmission` contract only from a registered, validated catalog entry; unknown datasets cannot become admitted.
+- Added regression coverage for catalog-to-research-job flow, unknown datasets, conflicting duplicates, provenance mismatch, failed structural validation, and idempotent registration.
+- Existing research authority, strategy admission, simulation-only defaults, causal timing, and isolated-ledger boundaries are unchanged. No live broker/order path was added.
+- This is a local implementation candidate. Native .NET compilation/tests cannot be claimed because the available build environment has no .NET SDK/compiler; static repository validation and package-source tests pass.
+
+### v30.10c local validation
+- Source integrity: reverified before editing; no pre-edit hash mismatch found.
+- Static architecture gate: PASS.
+- Source-package validation: PASS.
+- Native .NET compilation: NOT RUN / unavailable (`dotnet`, `csc`, `msbuild`, `mono` absent).
+- Android/Windows packaging: NOT RUN.
+- GitHub Actions/live PR state: intentionally deferred per current Mellon priority.
+- Device testing: deferred; implementation-first cycle.
+- Status: **LOCAL CORRECTION CANDIDATE — NOT STABLE** until native compilation and tests are independently validated.
 
 ## Build governance / approval workflow
 - Mellon initiates one controlled master-build inspection/planning cycle.
@@ -648,3 +677,300 @@ Files modified: src/QuantForge.App/MainPage.cs; docs/MASTER_BUILD.md; docs/MELLO
 v30.10a source 970c8a6c5109dde7a890d4e8502fb79d5d4ba964 is FAILED / NON-STABLE: PR run 36223880051 passed static and 235 core plus 23 reflection-disabled checks, then Android exposed CS8602 at MainPage.cs:129 because MAUI annotates picker entries as nullable. The Switch ambiguity is resolved. Windows validation was still running when this correction was prepared; no success is inferred. No APK was delivered.
 
 v30.10b checks each entry and rejects the batch through the existing unavailable-provider path before constructing a stream source if an entry is null. It does not silently discard entries or publish partial results. Same authorized Phase 5 scope, branch and app version 0.30.10/code3010; new source SHA distinguishes the correction. Modified the same five files as v30.10a; no new/deleted files. Commit: v30.10b: reject nullable picker entries before batch source creation. Exact-head native/core/static/package validation pending; v30.09 remains the latest fully validated diagnostic baseline. Progress estimate stays 38% for Phase 5; device validation and end-to-end research remain unfinished. Main merge/stable promotion/live authority unchanged and unapproved. No new approval queue.
+
+## v30.12b — deterministic publication artifact and local result archive
+
+Automellon local implementation cycle. Added deterministic `ResearchPublicationArtifact` binding complete publication provenance to execution trace, chart CSV and ledger CSV fingerprints. Added `ResearchResultArchive` for isolated, fingerprint-keyed local result retention with collision detection and deterministic listing. Blocked/incomplete research cannot enter the archive. No live authority, broker connectivity, or provenance inference is introduced. GitHub state intentionally unverified/deferred.
+
+Native .NET compilation remains unavailable in the local environment; this iteration is a local candidate pending native validation. Phase 5 estimate remains approximately 38% until broader workflow implementation materially changes the audited denominator.
+
+## v30.13a — workflow-level research package
+
+Automellon implementation increment. Added `ResearchWorkflowPackage` to bind a workflow summary to its complete publication artifacts with a deterministic package fingerprint. Each publication must correspond to a workflow report. Blocked/invalid reports remain represented in the summary and cannot be converted into publications. No live authority or forward-looking inference is introduced.
+
+## v30.13b — persistent publication artifact store
+
+Automellon implementation increment. Added a local file-backed `ResearchPublicationFileStore` using fingerprint-keyed directories, manifest collision detection and temporary-directory atomic publication. The store retains manifest/chart/ledger artifacts only after publication validation. It does not create broker authority or infer provenance.
+
+Native .NET compilation remains unavailable locally; v30.13b is a local candidate. GitHub remains intentionally deferred.
+
+## v30.14a — end-to-end research coordinator
+
+Automellon implementation increment. Added an explicit end-to-end coordinator that requires catalog-backed dataset admission and an admitted sanitized strategy envelope before delegating to the existing research workflow. Dataset and strategy identities must match the run exactly. Existing session coverage, reliability, causal and execution gates remain authoritative; this coordinator does not bypass them.
+
+## v30.14b — persistent dataset catalog
+
+Automellon implementation increment. Added `DatasetCatalogFileStore` with deterministic ordered JSON serialization, validated reload through the existing catalog rules, and atomic temporary-file replacement. Dataset admission remains fail-closed after reload. No identity or provenance is inferred during persistence.
+
+Native .NET compilation remains unavailable locally; v30.14b is a local candidate. GitHub remains intentionally deferred.
+
+## AutoMellon v30.24a-v30.24b local implementation cycle
+
+### v30.24a - optimization result application presentation
+- Added read-only optimization result state with deterministic selected-variant presentation.
+- Revalidates optimization selection against the complete result set before exposure.
+- Exposes only simulated terminal metrics; live-account, order-submission, and settings authority remain false.
+- Blocked optimization outcomes remain blocked and cannot acquire selected-variant or performance state.
+
+### v30.24b - optimization result recovery integrity
+- Persisted optimization UI state now has deterministic JSON and text representations.
+- Recovery validates storage identity, duplicate job identities, selection consistency, simulated metrics, and authority flags.
+- JSON/text disagreement, incomplete result directories, and tampering fail closed.
+- Added read-only optimization recovery entry point.
+
+Validation classification: local implementation candidate. Static architecture and deterministic package-source tests pass. Native .NET compile/test and device runtime remain unverified in this environment.
+
+## AutoMellon v30.25a-v30.25b local implementation cycle
+
+### v30.25a - causal walk-forward temporal plan
+- Added explicit training/evaluation windows for walk-forward segments.
+- Training events/intents are constrained to the declared training window; evaluation events/intents are constrained to the later evaluation window.
+- Training and evaluation temporal partitions must be distinct.
+- Optimization and evaluation use one immutable strategy fingerprint.
+- Evaluation windows are chronological and non-overlapping.
+
+### v30.25b - deterministic walk-forward runner
+- Executes optimization only on training inputs, then carries the selected strategy/parameter identity unchanged into later evaluation.
+- Evaluation uses the existing catalog, reliability, authoritative session-coverage, strategy-admission, and research-execution gates.
+- Incomplete training selection or non-complete evaluation blocks the walk-forward result.
+- Result and per-segment fingerprints are deterministic.
+
+Validation classification: local implementation candidate; native .NET compile/tests remain unverified in this environment.
+
+## AutoMellon v30.26a-v30.26b local implementation cycle
+
+### v30.26a - validated walk-forward application state
+- Added independent verification of per-segment and whole-result fingerprints.
+- Added read-only walk-forward application state with selected training identity and out-of-sample evaluation metrics.
+- Complete results require complete optimization and evaluation for every segment.
+- Live-account, order-submission, and settings authority remain false.
+
+### v30.26b - durable walk-forward persistence and recovery
+- Added deterministic JSON and Markdown persistence for walk-forward outcomes.
+- Recovery verifies storage identity, result fingerprints, segment fingerprints, optimization state, research report validity, and JSON/Markdown agreement.
+- Missing, incomplete, collided, or tampered storage fails closed.
+
+## AutoMellon v30.27a-v30.27b local implementation cycle
+
+### v30.27a - walk-forward application workflow
+- Added one bounded operation for run, validate, persist, present, and verified recovery.
+- Application presentation uses only already-validated walk-forward result state.
+
+### v30.27b - fail-closed walk-forward presentation session
+- Added read-only session lifecycle for recovered walk-forward evidence.
+- Loading begins by clearing the prior state; invalid/tampered recovery leaves no stale result visible.
+- Stable diagnostic codes are exposed instead of raw storage exception/path detail.
+
+## v30.34a-v30.34b — Fail-closed market admission readiness (AutoMellon Android)
+
+- Added `MarketAdmissionReadinessRules` to explain, per inspected batch member, whether the source is structurally blocked, still needs independently trusted evidence, or is ready only to form an admission request through the existing immutable admission pipeline.
+- Readiness never infers dataset identity, instrument, timeframe, provenance, session authority, or independence from filenames, prices, or cross-source agreement. Identity conflicts, descriptive-label conflicts, fingerprint disagreement, incomplete inspection, and non-admission-eligible source states remain blocking.
+- The MAUI market-data screen now renders the readiness requirements after mixed batch inspection so Android testers can see exactly which trusted inputs remain missing. `Ready` is explicitly not equivalent to admitted data, research authority, or live authority.
+- App version remains `0.30.34` / Android code `3034` for this a/b correction pair. Local static repository, source-packaging, Android-build-script, and APK-bundle-verifier tests pass. Native .NET/MAUI compilation remains unavailable in the current AutoMellon runtime and no mismatched APK is substituted.
+- GitHub exact-source Android and Windows build prompts remain part of `docs/GITHUB_BUILD_INSTRUCTIONS.md` and are required in exported build bundles until the owner changes the protocol.
+
+## v30.35a-v30.35b — External admission-evidence pairing (AutoMellon Android)
+
+- Added a strict, bounded `MarketAdmissionEvidence` JSON contract for independently supplied dataset ID, instrument, timeframe, and immutable provenance. Unknown, duplicate, missing, future-schema, malformed, oversized, unavailable, or cancelled evidence fails closed.
+- Evidence inspection computes the exact evidence-file SHA-256 but never mutates `DatasetCatalog`. `MarketAdmissionPreparation` can form a `MarketBatchAdmissionRequest` only when the external evidence agrees with one admission-eligible inspected source by exact sanitized-artifact fingerprint and does not conflict with the descriptive filename identity.
+- The Android/MAUI market-data screen can inspect an external admission-evidence JSON after a completed batch, locate the exact inspected source by fingerprint, and dry-run the existing catalog-entry validation. Success explicitly means only that an admission request can be formed; this screen does not register/admit the dataset.
+- App version `0.30.35` / Android code `3035`. Local static repository, deterministic source packaging, Android build-script, and APK-bundle-verifier tests pass. Native .NET/MAUI compilation remains unavailable in the current AutoMellon runtime; exact-source GitHub/native validation is still required before calling the iteration native-validated/stable.
+
+## v30.36a/v30.36b - explicit Android dataset registration and catalog review
+
+AutoMellon implementation-first cycle. v30.36a adds `MarketAdmissionApplicationWorkflow`, which consumes only an already prepared admission request, reruns the existing exact-byte admission conversion, loads the persistent dataset catalog, registers the immutable entry, derives `DataAdmission`, and atomically saves the catalog. It returns only after persistence succeeds. Exact duplicate registration is idempotent; conflicting reuse of a dataset ID fails closed. The Android shell now requires an explicit second action, **Register verified dataset in local catalog**, after the external-evidence dry run. Batch inspection or evidence inspection alone still does not mutate the catalog.
+
+v30.36b adds a read-only **Show admitted datasets** Android view. The display reloads the persistent catalog through `DatasetCatalogFileStore`, which revalidates every catalog entry before returning it. Invalid/tampered catalog storage is not partially displayed. The view exposes dataset ID, external instrument/timeframe identity, bounded coverage range and exact SHA-256. Catalog admission remains necessary but not sufficient for research execution and grants no strategy, broker, order-submission or live authority.
+
+App version is 0.30.36 / Android code 3036. Local repository static gate, deterministic packaging test, Android build-script tests and APK-bundle-verifier tests pass. Native .NET/MAUI compilation remains unavailable in the AutoMellon runtime, so no exact v30.36b APK is claimed. Every exported build includes `GITHUB_BUILD_INSTRUCTIONS.md`; GitHub/native builders must stop if the checkout does not match the exact release source identity. No GitHub state is inferred.
+
+## v30.37a/v30.37b - strict session-policy evidence and Android recomputation
+
+v30.37a adds a strict bounded `SessionCoverageEvidence` contract and reader. Evidence must explicitly identify the dataset ID/fingerprint and an authoritative, provenance-identified UTC session policy. Unknown/duplicate fields, unsupported schema versions, non-authoritative policies, malformed/overlapping intervals and oversized evidence fail closed. The evidence format intentionally contains no externally asserted `coveragePassed` field: QuantForge must recompute coverage itself.
+
+v30.37b adds `SessionCoveragePreparation` and an Android flow for **Check authoritative session coverage JSON**. The workflow reloads the persistent dataset catalog, requires exactly one catalog identity match, requires exactly one current inspected minute source with the same SHA-256, converts those exact rows to market events, and runs the existing `SessionCoverageRules.Analyze`. The UI reports expected/observed/missing/outside-session counts and the deterministic policy fingerprint. Even a complete authoritative report satisfies only the session-coverage gate; strategy admission, reliability and workflow gates remain separate. No broker/live authority is introduced.
+
+App version is 0.30.37 / Android code 3037. Static repository validation, deterministic source-packaging tests, Android build-script tests and APK-bundle-verifier tests pass locally. Native .NET/MAUI compilation remains unavailable here, so no exact v30.37b APK is claimed. Use the included GitHub build instructions only after synchronizing the exact release source.
+
+
+## AutoMellon v30.39b-v30.44a local implementation cycle
+
+Ten local-only iterations were completed before export, per owner instruction.
+
+- v30.39b: application workflow persists and round-trips only already-admitted research-safe strategy artifacts.
+- v30.40a: `ResearchGateBundle` binds admitted dataset identity, authoritative session coverage, research-admissible reliability, and admitted strategy evidence under one deterministic fingerprint.
+- v30.40b: complete gate bundles persist atomically and are revalidated on recovery.
+- v30.41a: `ResearchLaunchIntent` binds one runnable research job exactly to one validated gate bundle.
+- v30.41b: launch packages persist the gates and launch intent together and revalidate both on load.
+- v30.42a: terminal research reports are bound to their launch identity as immutable outcome artifacts.
+- v30.42b: complete launch+outcome packages persist atomically with storage-key verification.
+- v30.43a: deterministic side-by-side terminal-outcome comparison was added without winner/ranking semantics; performance deltas are exposed only when both reports actually contain complete simulated account state.
+- v30.43b: comparison packages persist both source outcomes plus the deterministic comparison and revalidate all nested evidence on recovery.
+- v30.44a: canonical research-workspace indexing was added for gates, launches, outcomes and comparisons, with deterministic ordering, duplicate rejection, fingerprinting and atomic persistence. App candidate version advanced to 0.30.44 / Android code 3044.
+
+Local validation: repository static architecture gate PASS; deterministic source-packaging self-test PASS at each iteration. Native .NET/MAUI compilation, Android APK production, Windows native build and device acceptance remain unverified in this environment. Simulation-only defaults, exact provenance, quarantine/admission, no-forward-bias, isolated ledgers and fail-closed behavior remain unchanged. GitHub remains intentionally deferred until owner testing.
+
+- v30.44b: add workspace cross-reference integrity inspection. Local static/package gates passed; native compilation pending.
+
+- v30.45a: add exact workspace evidence queries. Local static/package gates passed; native compilation pending.
+
+- v30.45b: add immutable workspace snapshots. Local static/package gates passed; native compilation pending.
+
+- v30.46a: add deterministic research readiness snapshots. Local static/package gates passed; native compilation pending.
+
+- v30.46b: persist launch-ready research snapshots. Local static/package gates passed; native compilation pending.
+
+- v30.47a: bind launch requests to exact readiness evidence. Local static/package gates passed; native compilation pending.
+
+- v30.47b: persist exact research launch requests. Local static/package gates passed; native compilation pending.
+
+- v30.48a: add read-only application research review model. Local static/package gates passed; native compilation pending.
+
+- v30.48b: persist read-only research review state. Local static/package gates passed; native compilation pending.
+
+- v30.49a: add neutral application research comparison model. Local static/package gates passed; native compilation pending.
+
+- v30.49b: persist neutral research comparison views. Local static/package gates passed; native compilation pending.
+
+- v30.50a: add explicit active admitted-strategy selection. Local static/package gates passed; native compilation pending.
+
+- v30.50b: persist active admitted-strategy selection. Local static/package gates passed; native compilation pending.
+
+- v30.51a: add deterministic research resume checkpoints. Local static/package gates passed; native compilation pending.
+
+- v30.51b: persist and verify research resume checkpoints. Local static/package gates passed; native compilation pending.
+
+- v30.52a: add explicit dataset-strategy launch mismatch diagnostics. Local static/package gates passed; native compilation pending.
+
+- v30.52b: persist exact research identity diagnostics. Local static/package gates passed; native compilation pending.
+
+- v30.53a: add complete workspace consistency validation. Local static/package gates passed; native compilation pending.
+
+- v30.53b: add deterministic workspace index rebuild and merge. Local static/package gates passed; native compilation pending.
+
+- v30.54a: add read-only product research workspace dashboard. Local static/package gates passed; native compilation pending.
+
+- v30.54b: persist validated read-only workspace dashboard. Local static/package gates passed; native compilation pending.
+
+- v30.55a: add deterministic workspace activity feed. Local static/package gates passed; native compilation pending.
+
+- v30.55b: persist deterministic workspace activity feed. Local static/package gates passed; native compilation pending.
+
+- v30.56a: add fail-closed research action availability model. Local static/package gates passed; native compilation pending.
+
+- v30.56b: persist research action availability with live-authority rejection. Local static/package gates passed; native compilation pending.
+
+- v30.57a: add deterministic workspace alert model. Local static/package gates passed; native compilation pending.
+
+- v30.57b: fingerprint and persist workspace alert bundles. Local static/package gates passed; native compilation pending.
+
+- v30.58a: add Android research home state from validated workspace evidence. Local static/package gates passed; native compilation pending.
+
+- v30.58b: persist validated Android research home state. Local static/package gates passed; native compilation pending.
+
+- v30.59a: add deterministic native build evidence contract. Local static/package gates passed; native compilation pending.
+
+- v30.59b: persist and verify native build evidence. Local static/package gates passed; native compilation pending.
+
+- v30.60a: add exact-source native build reconciliation. Local static/package gates passed; native compilation pending.
+
+- v30.60b: persist native build reconciliation results. Local static/package gates passed; native compilation pending.
+
+- v30.61a: add exact native-build-bound device acceptance evidence. Local static/package gates passed; native compilation pending.
+
+- v30.61b: persist device acceptance evidence. Local static/package gates passed; native compilation pending.
+
+- v30.62a: add explicit release validation matrix. Local static/package gates passed; native compilation pending.
+
+- v30.62b: persist explicit release validation matrix. Local static/package gates passed; native compilation pending.
+
+- v30.63a: add Android native-validation status model. Local static/package gates passed; native compilation pending.
+
+- v30.63b: persist Android native-validation status. Local static/package gates passed; native compilation pending.
+
+- v30.64a: add cross-platform native validation dashboard. Local static/package gates passed; native compilation pending.
+
+- v30.64b: persist cross-platform native validation dashboard. Local static/package gates passed; native compilation pending.
+
+- v30.65a: add exact Android dataset selection. Local static/package gates passed; native compilation pending.
+
+- v30.65b: persist Android dataset selection. Local static/package gates passed; native compilation pending.
+
+- v30.66a: add exact Android admitted-strategy selection. Local static/package gates passed; native compilation pending.
+
+- v30.66b: persist Android admitted-strategy selection. Local static/package gates passed; native compilation pending.
+
+- v30.67a: add Android research readiness card. Local static/package gates passed; native compilation pending.
+
+- v30.67b: persist Android research readiness card. Local static/package gates passed; native compilation pending.
+
+- v30.68a: add Android research launch draft bound to exact selections. Local static/package gates passed; native compilation pending.
+
+- v30.68b: persist exact Android research launch drafts. Local static/package gates passed; native compilation pending.
+
+- v30.69a: add Android research execution queue state machine. Local static/package gates passed; native compilation pending.
+
+- v30.69b: persist Android research execution queue. Local static/package gates passed; native compilation pending.
+
+- v30.70a: add terminal Android research history. Local static/package gates passed; native compilation pending.
+
+- v30.70b: persist Android research history. Local static/package gates passed; native compilation pending.
+
+- v30.71a: add Android terminal research result cards. Local static/package gates passed; native compilation pending.
+
+- v30.71b: persist Android terminal research result cards. Local static/package gates passed; native compilation pending.
+
+- v30.72a: add neutral Android research comparison cards. Local static/package gates passed; native compilation pending.
+
+- v30.72b: persist neutral Android research comparison cards. Local static/package gates passed; native compilation pending.
+
+- v30.73a: add deterministic Android research export index. Local static/package gates passed; native compilation pending.
+
+- v30.73b: persist Android research export index. Local static/package gates passed; native compilation pending.
+
+- v30.74a: add Android diagnostic test summary. Local static/package gates passed; native compilation pending.
+
+- v30.74b: persist Android diagnostic summaries. Local static/package gates passed; native compilation pending.
+
+- v30.75a: bind Android diagnostic summaries to exact native build evidence. Local static/package gates passed; native compilation pending.
+
+- v30.75b: persist build-bound Android diagnostic evidence bundles. Local static/package gates passed; native compilation pending.
+
+- v30.76a: add exact-source Android native-test handoff. Local static/package gates passed; native compilation pending.
+
+- v30.76b: persist exact-source Android native-test handoffs. Local static/package gates passed; native compilation pending.
+
+- v30.77a: add explicit cross-platform release candidate summary. Local static/package gates passed; native compilation pending.
+
+- v30.77b: persist release candidate summaries. Local static/package gates passed; native compilation pending.
+
+- v30.78a: add deterministic Android native acceptance checklist. Local static/package gates passed; native compilation pending.
+
+- v30.78b: persist Android native acceptance checklist. Local static/package gates passed; native compilation pending.
+
+- v30.79a: add consolidated program readiness report. Local static/package gates passed; native compilation pending.
+
+- v30.79b: persist simulation-only program readiness reports for handoff/recovery. Local static/package gates passed; native compilation pending.
+
+- v30.80a: add canonical simulation-only strategy draft model with deterministic parameter fingerprinting. Local static/package gates passed; native compilation pending.
+
+- v30.80b: persist and recover canonical strategy drafts by fingerprint. Local static/package gates passed; native compilation pending.
+
+- v30.81a: bind strategy drafts to admitted sanitized strategy evidence with fail-closed identity diagnostics. Local static/package gates passed; native compilation pending.
+
+- v30.81b: add Android strategy draft card with explicit readiness diagnostics and no order authority. Local static/package gates passed; native compilation pending.
+
+- v30.82a: persist Android strategy draft cards while preserving research-only authority. Local static/package gates passed; native compilation pending.
+
+- v30.82b: add read-only Android research launch preview bound to draft, selections, and readiness evidence. Local static/package gates passed; native compilation pending.
+
+- v30.83a: persist Android research launch previews for recovery without execution authority. Local static/package gates passed; native compilation pending.
+
+- v30.83b: add fingerprinted Android research session summary across launch preview, queue, and terminal result state. Local static/package gates passed; native compilation pending.
+
+- v30.84a: persist fingerprint-keyed Android research session summaries with simulation-only authority checks. Local static/package gates passed; native compilation pending.
+
+
+## v30.91b AutoMellon 15-iteration boundary
+
+Fifteen locally validated research-only iterations from v30.84b through v30.91b add deterministic Android research recovery/timeline/export evidence, strategy and launch guard summaries, run/outcome/comparison digests, workspace health, exact-source native validation request/receipt contracts, explicit native-evidence promotion gating, and self-verifying handoff/release-boundary evidence. App candidate 0.30.91/code3091. Static architecture and deterministic package-source gates pass. Native Android/Windows build and device validation remain external requirements; no stable promotion or live/order authority is implied.

@@ -1,0 +1,1 @@
+using QuantForge.Core;namespace QuantForge.Core.ArchitectureTests;public sealed class ReleaseCandidateSummaryTests{[Fact]public void Source_only_candidate_is_not_stable(){var m=ReleaseValidationMatrixRules.Create(true,null,null);var v=ReleaseCandidateSummaryRules.Create("1","1","c","t",m,m);Assert.False(v.StableEligible);Assert.False(v.LiveAuthorityEnabled);}}

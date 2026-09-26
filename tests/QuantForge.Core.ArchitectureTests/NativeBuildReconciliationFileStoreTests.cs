@@ -1,0 +1,1 @@
+using QuantForge.Core;namespace QuantForge.Core.ArchitectureTests;public sealed class NativeBuildReconciliationFileStoreTests{[Fact]public void Reconciliation_round_trips(){var p=Path.GetTempFileName();try{var s=new NativeBuildReconciliationFileStore(p);var v=new NativeBuildReconciliation(false,new[]{"commit"});s.Save(v);Assert.False(s.Load().Matches);}finally{File.Delete(p);}}}
