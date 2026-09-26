@@ -22,8 +22,8 @@ public sealed record Nt8MinuteInspectionResult(
 
 public static class Nt8MinuteInspector
 {
-    public const int MaximumBytes = 8 * 1024 * 1024;
-    public const int MaximumBars = 100_000;
+    public const int MaximumBytes = 32 * 1024 * 1024;
+    public const int MaximumBars = 500_000;
     public const int MaximumLineCharacters = 256;
 
     // Explicitly scoped to UTC, end-stamped one-minute NT8 text exports.
@@ -40,35 +40,28 @@ public static class Nt8MinuteInspector
             return Invalid("QF-DATA-DESCRIPTOR");
         try
         {
-            var bytes = new byte[MaximumBytes + 1];
-            var count = 0;
-            while (true)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                var read = await source.ReadAsync(bytes.AsMemory(count, bytes.Length - count), cancellationToken).ConfigureAwait(false);
-                if (read == 0) break;
-                count += read;
-                if (count > MaximumBytes) return Invalid("QF-DATA-TOO-LARGE");
-            }
-            cancellationToken.ThrowIfCancellationRequested();
-            var offset = count >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF ? 3 : 0;
-            var text = new UTF8Encoding(false, true).GetString(bytes, offset, count - offset);
+            // Bound encoded input and each line independently. Never retain a whole-file string.
+            var buffer = new byte[64 * 1024];
+            var line = new byte[MaximumLineCharacters * 4 + 4];
+            var lineBytes = 0;
+            var totalBytes = 0;
+            var lineNumber = 0;
             var bars = new List<MarketEvent>();
             var discontinuities = 0;
-            var start = 0;
-            var lineNumber = 0;
-            while (start < text.Length)
+            var utf8 = new UTF8Encoding(false, true);
+            using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+
+            Nt8MinuteInspectionResult? ParseLine(bool eof)
             {
-                cancellationToken.ThrowIfCancellationRequested();
                 lineNumber++;
-                var end = text.IndexOf('\n', start);
-                if (end < 0) end = text.Length;
-                var length = end - start;
-                if (length > 0 && text[start + length - 1] == '\r') length--;
-                if (length == 0 || length > MaximumLineCharacters)
+                var offset = lineNumber == 1 && lineBytes >= 3 && line[0] == 0xEF && line[1] == 0xBB && line[2] == 0xBF ? 3 : 0;
+                var text = utf8.GetString(line, offset, lineBytes - offset);
+                if (text.EndsWith('\r')) text = text[..^1];
+                if (eof && offset == 3 && lineBytes == 3) return null;
+                if (text.Length == 0 || text.Length > MaximumLineCharacters)
                     return Invalid("QF-DATA-LINE", lineNumber);
                 if (bars.Count == MaximumBars) return Invalid("QF-DATA-TOO-MANY-BARS", lineNumber);
-                var fields = text.Substring(start, length).Split(';');
+                var fields = text.Split(';');
                 if (fields.Length != 6 || fields[0].Length != 15 ||
                     !DateTimeOffset.TryParseExact(fields[0], "yyyyMMdd HHmmss", CultureInfo.InvariantCulture,
                         DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var stamp) || stamp.Second != 0)
@@ -94,12 +87,44 @@ public static class Nt8MinuteInspector
                     if (delta != TimeSpan.FromMinutes(1)) discontinuities++;
                 }
                 bars.Add(bar);
-                start = end + 1;
+                return null;
+            }
+
+            while (true)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var request = Math.Min(buffer.Length, MaximumBytes - totalBytes + 1);
+                var read = await source.ReadAsync(buffer.AsMemory(0, request), cancellationToken).ConfigureAwait(false);
+                cancellationToken.ThrowIfCancellationRequested();
+                if (read == 0) break;
+                totalBytes += read;
+                if (totalBytes > MaximumBytes) return Invalid("QF-DATA-TOO-LARGE");
+                hash.AppendData(buffer, 0, read);
+                for (var i = 0; i < read; i++)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (buffer[i] == (byte)'\n')
+                    {
+                        var failure = ParseLine(false);
+                        if (failure is not null) return failure;
+                        lineBytes = 0;
+                    }
+                    else
+                    {
+                        if (lineBytes == line.Length) return Invalid("QF-DATA-LINE", lineNumber + 1);
+                        line[lineBytes++] = buffer[i];
+                    }
+                }
+            }
+            if (lineBytes > 0)
+            {
+                var failure = ParseLine(true);
+                if (failure is not null) return failure;
             }
             if (bars.Count == 0) return Invalid("QF-DATA-EMPTY");
             cancellationToken.ThrowIfCancellationRequested();
             return new(MarketDataInspectionStatus.Inspected, "QF-DATA-INSPECTED", descriptor,
-                Convert.ToHexString(SHA256.HashData(bytes.AsSpan(0, count))), bars.AsReadOnly(), discontinuities);
+                Convert.ToHexString(hash.GetHashAndReset()), bars.AsReadOnly(), discontinuities);
         }
         catch (OperationCanceledException) { return new(MarketDataInspectionStatus.Cancelled, "QF-DATA-CANCELLED"); }
         catch (DecoderFallbackException) { return Invalid("QF-DATA-ENCODING"); }

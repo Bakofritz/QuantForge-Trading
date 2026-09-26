@@ -22,8 +22,8 @@ public static class ImportInspectionFeedback
     {
         "QF-MANIFEST-TOO-LARGE" => "JSON metadata exceeds 64 KiB. Market-data TXT belongs in Choose market-data TXT",
         "QF-MANIFEST-INVALID" => "This is not a supported QuantForge JSON manifest. Market-data TXT belongs in Choose market-data TXT",
-        "QF-DATA-TOO-LARGE" => "Market-data file exceeds the current 8 MiB limit. No partial file was accepted",
-        "QF-DATA-TOO-MANY-BARS" => "Market-data file exceeds the current 100,000-bar limit. No partial file was accepted",
+        "QF-DATA-TOO-LARGE" => "Market-data file exceeds the current 32 MiB limit. No partial file was accepted",
+        "QF-DATA-TOO-MANY-BARS" => "Market-data file exceeds the current 500,000-bar limit. No partial file was accepted",
         "QF-DATA-FORMAT" => "Expected NT8 UTC one-minute OHLCV text. Daily and tick formats are not supported yet",
         "QF-DATA-ORDER" => "Timestamps repeat or run backwards. Data was not reordered or deduplicated",
         "QF-DATA-EMPTY" => "The selected file contains no bars",

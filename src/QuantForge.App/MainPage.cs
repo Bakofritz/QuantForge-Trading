@@ -12,7 +12,7 @@ public sealed class MainPage : ContentPage
     private readonly Label _manifestLabel = new() { Text = "Advanced: QuantForge research metadata (.json), up to 64 KiB. Market-data TXT files do not belong here." };
     private readonly Label _fileDetailsLabel = new() { Text = "Contract and Last/Bid/Ask will be read from the filename. Labels remain unverified." };
     private readonly Button _inspectDataButton = new() { Text = "Choose market-data TXT (UTC one-minute)" };
-    private readonly Label _dataLabel = new() { Text = "Choose an original NT8 UTC one-minute export. Up to 8 MiB / 100,000 bars. Daily and tick files are not supported in this build." };
+    private readonly Label _dataLabel = new() { Text = "Choose an original NT8 UTC one-minute export. Up to 32 MiB / 500,000 bars. Daily and tick files are not supported in this build." };
     private Nt8MinuteInspectionResult? _inspectedData;
     private readonly Button _compareDataButton = new() { Text = "Compare export with same declared contract and series", IsEnabled = false };
     private readonly Button _clearDataButton = new() { Text = "Clear inspected market data", IsEnabled = false };
@@ -153,7 +153,7 @@ public sealed class MainPage : ContentPage
         AppDiagnostics.Record(DiagnosticAction.DataInspection, DiagnosticOutcome.Started);
         try
         {
-            var file = await FilePicker.Default.PickAsync(new PickOptions { PickerTitle = "Choose UTC NT8 one-minute text export (up to 8 MiB)" });
+            var file = await FilePicker.Default.PickAsync(new PickOptions { PickerTitle = "Choose UTC NT8 one-minute text export (up to 32 MiB)" });
             if (file is null)
             {
                 AppDiagnostics.Record(DiagnosticAction.DataInspection, DiagnosticOutcome.Cancelled, actionClock.ElapsedMilliseconds);

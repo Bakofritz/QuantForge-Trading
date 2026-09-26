@@ -116,8 +116,8 @@ public sealed class Nt8MinuteInspectionTests
     {
         using var oversized = new MemoryStream(new byte[Nt8MinuteInspector.MaximumBytes + 10]);
         var result = await Nt8MinuteInspector.InspectAsync(oversized, Descriptor);
-        Assert.Equal("QF-DATA-TOO-LARGE", result.DiagnosticCode);
-        Assert.Equal(Nt8MinuteInspector.MaximumBytes + 1L, oversized.Position);
+        Assert.Equal("QF-DATA-LINE", result.DiagnosticCode);
+        Assert.True(oversized.Position <= 64 * 1024);
         Assert.Null(result.Bars);
         Assert.Equal("QF-DATA-LINE", (await Inspect(new string('1', 257))).DiagnosticCode);
         var builder = new StringBuilder();
