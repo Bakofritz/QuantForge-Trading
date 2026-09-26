@@ -126,7 +126,11 @@ public sealed class MainPage : ContentPage
             }
             var processing = Stopwatch.StartNew();
             cancellation.CancelAfter(TimeSpan.FromMinutes(2));
-            var sources = files.Select(f => new MarketBatchSource(f.FileName, () => f.OpenReadAsync())).ToArray();
+            var sources = files.Select(f =>
+            {
+                var file = f ?? throw new InvalidDataException("File picker returned an unavailable entry.");
+                return new MarketBatchSource(file.FileName, () => file.OpenReadAsync());
+            }).ToArray();
             var result = await Task.Run(() => MarketBatchInspection.InspectAsync(sources, cancellation.Token));
             cancellation.Token.ThrowIfCancellationRequested();
             var cross = await Task.Run(() => MarketCrossValidation.Compare(result, utcDays, cancellation.Token));
