@@ -1,0 +1,49 @@
+name: AutoMellon Controller
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'master/v30.00-phase5-production-hardening'
+      - 'automellon/**'
+    paths:
+      - 'automellon/**'
+      - 'tools/automellon_controller.py'
+      - '.github/workflows/automellon-controller.yml'
+      - 'src/**'
+      - 'tests/**'
+      - 'Directory.Build.props'
+
+permissions:
+  contents: read
+
+jobs:
+  controller:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Run bounded AutoMellon controller
+        id: controller
+        continue-on-error: true
+        run: python tools/automellon_controller.py
+      - name: Upload controller audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: automellon-controller-${{ github.sha }}
+          path: |
+            AUTOMELLON_RESULT.json
+            artifacts/automellon/
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Enforce controller result
+        if: steps.controller.outcome != 'success'
+        run: |
+          echo "AutoMellon controller failed or blocked. Review AUTOMELLON_RESULT.json artifact."
+          exit 1
