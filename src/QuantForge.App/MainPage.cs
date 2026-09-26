@@ -11,7 +11,7 @@ public sealed class MainPage : ContentPage
     private readonly Button _batchButton = new() { Text = "Choose multiple market-data TXT / ZIP files" };
     private readonly Button _clearBatchButton = new() { Text = "Clear batch", IsEnabled = false };
     private readonly Label _batchLabel = new() { Text = "Mix MES/MNQ and minute/day/tick files. Up to 64 files/members, 32 MiB per TXT, 64 MiB total ZIP input, 128 MiB total expanded text and 1,000,000 retained rows. Unclear identities stay unresolved; no research admission." };
-    private readonly Switch _utcDayComparison = new();
+    private readonly Microsoft.Maui.Controls.Switch _utcDayComparison = new();
     private MarketBatchResult? _batch;
     private readonly Button _inspectManifestButton = new() { Text = "Inspect QuantForge JSON manifest" };
     private readonly Label _manifestLabel = new() { Text = "Advanced: QuantForge research metadata (.json), up to 64 KiB. Market-data TXT files do not belong here." };
