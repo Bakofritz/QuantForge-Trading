@@ -13,7 +13,7 @@ public enum DiagnosticAction
     SessionStarted, SessionStopped, ProblemMarked, ManifestInspection, DataInspection,
     SourceComparison, DataCleared, DeclarationChanged, CancelRequested, PageAppeared,
     PageDisappeared, WindowActivated, WindowDeactivated, WindowStopped, WindowResumed,
-    MemorySample, ExportRequested, FileLabelCheck, ManifestProcessing, DataProcessing, ComparisonProcessing, InspectionReason, FileLabelDetected
+    MemorySample, ExportRequested, FileLabelCheck, ManifestProcessing, DataProcessing, ComparisonProcessing, InspectionReason, FileLabelDetected, BatchInspection, BatchProcessing, CrossValidation
 }
 public enum DiagnosticOutcome { Observed, Started, Completed, Cancelled, Invalid, Unavailable, FileTooLarge, TooManyBars, WrongFileType, InvalidFormat, InvalidValues, InvalidOrder, EmptyFile, InvalidEncoding, InvalidFileLabel }
 public sealed record DiagnosticEnvironment(string Build, string Model, string Manufacturer,

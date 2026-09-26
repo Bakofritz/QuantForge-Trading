@@ -63,11 +63,11 @@ jobs:
           mkdir -p diagnostic-apk
           mapfile -t packages < <(find src/QuantForge.App/bin/Release/net10.0-android -maxdepth 1 -name '*-Signed.apk')
           test "${#packages[@]}" -eq 1
-          cp "${packages[0]}" diagnostic-apk/QuantForge-v30.09-diagnostic.apk
+          cp "${packages[0]}" diagnostic-apk/QuantForge-v30.10-diagnostic.apk
           signer=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -1)
-          "$signer" verify --verbose --print-certs diagnostic-apk/QuantForge-v30.09-diagnostic.apk > diagnostic-apk/signature.txt
+          "$signer" verify --verbose --print-certs diagnostic-apk/QuantForge-v30.10-diagnostic.apk > diagnostic-apk/signature.txt
           cd diagnostic-apk
-          sha256sum QuantForge-v30.09-diagnostic.apk > QuantForge-v30.09-diagnostic.apk.sha256
+          sha256sum QuantForge-v30.10-diagnostic.apk > QuantForge-v30.10-diagnostic.apk.sha256
           printf '%s\n' '${{ github.sha }}' > SOURCE_COMMIT.txt
       - name: Upload diagnostic APK for authorized device testing
         uses: actions/upload-artifact@v4

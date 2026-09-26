@@ -8,11 +8,16 @@ namespace QuantForge.App;
 
 public sealed class MainPage : ContentPage
 {
+    private readonly Button _batchButton = new() { Text = "Choose multiple market-data TXT / ZIP files" };
+    private readonly Button _clearBatchButton = new() { Text = "Clear batch", IsEnabled = false };
+    private readonly Label _batchLabel = new() { Text = "Mix MES/MNQ and minute/day/tick files. Up to 64 files/members, 32 MiB per TXT, 64 MiB total ZIP input, 128 MiB total expanded text and 1,000,000 retained rows. Unclear identities stay unresolved; no research admission." };
+    private readonly Switch _utcDayComparison = new();
+    private MarketBatchResult? _batch;
     private readonly Button _inspectManifestButton = new() { Text = "Inspect QuantForge JSON manifest" };
     private readonly Label _manifestLabel = new() { Text = "Advanced: QuantForge research metadata (.json), up to 64 KiB. Market-data TXT files do not belong here." };
     private readonly Label _fileDetailsLabel = new() { Text = "Contract and Last/Bid/Ask will be read from the filename. Labels remain unverified." };
     private readonly Button _inspectDataButton = new() { Text = "Choose market-data TXT (UTC one-minute)" };
-    private readonly Label _dataLabel = new() { Text = "Choose an original NT8 UTC one-minute export. Up to 32 MiB / 500,000 bars. Daily and tick files are not supported in this build." };
+    private readonly Label _dataLabel = new() { Text = "Choose an original NT8 UTC one-minute export. Up to 32 MiB / 500,000 bars. Use the batch control above for daily and tick files." };
     private Nt8MinuteInspectionResult? _inspectedData;
     private readonly Button _compareDataButton = new() { Text = "Compare export with same declared contract and series", IsEnabled = false };
     private readonly Button _clearDataButton = new() { Text = "Clear inspected market data", IsEnabled = false };
@@ -31,6 +36,9 @@ public sealed class MainPage : ContentPage
     public MainPage()
     {
         Title = "QuantForge";
+        _batchButton.Clicked += async (_, _) => await InspectBatchAsync();
+        _clearBatchButton.Clicked += (_, _) => { _batch = null; _batchLabel.Text = "Batch cleared. Original files unchanged."; _clearBatchButton.IsEnabled = false; AppDiagnostics.Record(DiagnosticAction.DataCleared); };
+
         _inspectManifestButton.Clicked += async (_, _) => await InspectManifestAsync();
 
         _inspectDataButton.Clicked += async (_, _) => await InspectDataAsync();
@@ -59,6 +67,12 @@ public sealed class MainPage : ContentPage
                     },
                     new DiagnosticPanel(),
                     new Label { Text = "Market data", FontAttributes = FontAttributes.Bold },
+                    _batchButton,
+                    new Label { Text = "Optional: compare daily bars using UTC calendar days (exploratory, not exchange sessions). Applies to next batch." },
+                    _utcDayComparison,
+                    _clearBatchButton,
+                    _batchLabel,
+                    new Label { Text = "Single-file minute inspection and manual reference comparison" },
                     _inspectDataButton,
                     _fileDetailsLabel,
                     _dataLabel,
@@ -90,6 +104,64 @@ public sealed class MainPage : ContentPage
         };
     }
 
+    private async Task InspectBatchAsync()
+    {
+        if (_inspectionCancellation is not null) return;
+        _batch = null;
+        ClearInspectedData();
+        var utcDays = _utcDayComparison.IsToggled;
+        using var cancellation = BeginInspection();
+        var clock = Stopwatch.StartNew();
+        AppDiagnostics.Record(DiagnosticAction.BatchInspection, DiagnosticOutcome.Started);
+        _batchLabel.Text = "Choose TXT files and/or ZIP archives. No data admitted.";
+        try
+        {
+            var picked = await FilePicker.Default.PickMultipleAsync(new PickOptions { PickerTitle = "Select market-data TXT and ZIP files" });
+            cancellation.Token.ThrowIfCancellationRequested();
+            var files = picked?.Take(MarketBatchInspection.MaximumFiles + 1).ToArray();
+            if (files is null || files.Length == 0)
+            {
+                AppDiagnostics.Record(DiagnosticAction.BatchInspection, DiagnosticOutcome.Cancelled, clock.ElapsedMilliseconds);
+                _batchLabel.Text = "Batch selection cancelled."; return;
+            }
+            var processing = Stopwatch.StartNew();
+            cancellation.CancelAfter(TimeSpan.FromMinutes(2));
+            var sources = files.Select(f => new MarketBatchSource(f.FileName, () => f.OpenReadAsync())).ToArray();
+            var result = await Task.Run(() => MarketBatchInspection.InspectAsync(sources, cancellation.Token));
+            cancellation.Token.ThrowIfCancellationRequested();
+            var cross = await Task.Run(() => MarketCrossValidation.Compare(result, utcDays, cancellation.Token));
+            cancellation.Token.ThrowIfCancellationRequested();
+            _batch = result.Completed ? result : null;
+            AppDiagnostics.Record(DiagnosticAction.BatchProcessing, DiagnosticOutcome.Observed, processing.ElapsedMilliseconds);
+            AppDiagnostics.Record(DiagnosticAction.BatchInspection, result.Completed ? DiagnosticOutcome.Completed : DiagnosticOutcome.Invalid, clock.ElapsedMilliseconds);
+            AppDiagnostics.Record(DiagnosticAction.CrossValidation, result.Completed ? DiagnosticOutcome.Completed : DiagnosticOutcome.Invalid);
+            var lines = new List<string> { $"{result.Code} | {result.Files.Count} file results. Inspection only; research/live disabled." };
+            foreach (var group in result.Files.GroupBy(f => f.Label?.Instrument ?? "Unresolved instrument").OrderBy(g => g.Key))
+            {
+                lines.Add($"GROUP: {group.Key} (unverified)");
+                foreach (var f in group)
+                    lines.Add($"#{f.Index} {f.Name}: {f.State} | {f.Data?.Kind} | {f.Label?.PriceSeries} | {f.Data?.Rows?.Count ?? 0} rows | {f.Code} | {f.LabelBasis}" +
+                        (f.Data?.Hash is { } h ? $" | SHA-256 {h}" : "") + (f.DuplicateOf is { } dupe ? $" | duplicate of #{dupe}" : ""));
+            }
+            lines.Add("CROSS-VALIDATION (unverified labels; observed coverage only)");
+            foreach (var pair in cross.Pairs)
+                lines.Add($"#{pair.Left} vs #{pair.Right}: {pair.Code} | {pair.Matching} matching, {pair.Conflicting} differing, {pair.LeftOnly}/{pair.RightOnly} only-left/right | {pair.Basis}");
+            lines.Add($"{cross.OmittedPairs} eligible pairs omitted by limit. {cross.Limitation}");
+            _batchLabel.Text = string.Join("\n\n", lines);
+        }
+        catch (OperationCanceledException)
+        {
+            _batch = null; _batchLabel.Text = "Batch cancelled/timed out. No batch results retained.";
+            AppDiagnostics.Record(DiagnosticAction.BatchInspection, DiagnosticOutcome.Cancelled, clock.ElapsedMilliseconds);
+        }
+        catch (Exception error) when (error is not OutOfMemoryException)
+        {
+            _batch = null; _batchLabel.Text = "Batch provider/processing unavailable. No batch results retained.";
+            AppDiagnostics.Record(DiagnosticAction.BatchInspection, DiagnosticOutcome.Unavailable, clock.ElapsedMilliseconds);
+        }
+        finally { EndInspection(); }
+    }
+
     private async Task InspectManifestAsync()
     {
         if (_inspectionCancellation is not null) return;
@@ -110,7 +182,7 @@ public sealed class MainPage : ContentPage
             {
                 AppDiagnostics.Record(DiagnosticAction.InspectionReason, DiagnosticOutcome.WrongFileType);
                 AppDiagnostics.Record(DiagnosticAction.ManifestInspection, DiagnosticOutcome.Invalid, actionClock.ElapsedMilliseconds);
-                _manifestLabel.Text = "This control accepts QuantForge JSON metadata only. For minute TXT files, use Choose market-data TXT above. Daily and tick files are not supported yet.";
+                _manifestLabel.Text = "This control accepts QuantForge JSON metadata only. For minute TXT files, use Choose market-data TXT above. Use batch inspection above for daily and tick data.";
                 return;
             }
             cancellation.Token.ThrowIfCancellationRequested();
@@ -252,6 +324,7 @@ public sealed class MainPage : ContentPage
     private CancellationTokenSource BeginInspection()
     {
         _inspectionCancellation = new CancellationTokenSource();
+        _batchButton.IsEnabled = _utcDayComparison.IsEnabled = _clearBatchButton.IsEnabled = false;
         _inspectDataButton.IsEnabled = _inspectManifestButton.IsEnabled = false;
         _cancelInspectionButton.IsEnabled = true;
         _compareDataButton.IsEnabled = _clearDataButton.IsEnabled = false;
@@ -261,6 +334,8 @@ public sealed class MainPage : ContentPage
     private void EndInspection()
     {
         _inspectionCancellation = null;
+        _batchButton.IsEnabled = _utcDayComparison.IsEnabled = true;
+        _clearBatchButton.IsEnabled = _batch is not null;
         _inspectDataButton.IsEnabled = _inspectManifestButton.IsEnabled = true;
         _cancelInspectionButton.IsEnabled = false;
         _compareDataButton.IsEnabled = _clearDataButton.IsEnabled = _inspectedData is not null;
